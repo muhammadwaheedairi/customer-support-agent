@@ -1,0 +1,222 @@
+[
+  {
+    "id": "TKT-001",
+    "name": "Sarah Mitchell",
+    "email": "sarah.mitchell@mitchelllawfirm.com",
+    "subject": "Cannot log into my account",
+    "category": "technical",
+    "priority": "high",
+    "message": "I have been trying to log into LexDesk since this morning and keep getting an error saying 'Invalid credentials'. I have not changed my password. I have 3 client meetings today and need access urgently. Please help immediately.",
+    "expected_action": "resolve",
+    "expected_response": "Troubleshooting steps for login issue — check email, reset password, clear cache"
+  },
+  {
+    "id": "TKT-002",
+    "name": "James Thornton",
+    "email": "j.thornton@thorntonlegal.co.uk",
+    "subject": "How do I set up client intake forms?",
+    "category": "general",
+    "priority": "medium",
+    "message": "I just signed up for the Firm plan and I want to set up intake forms for my family law practice. I have never used LexDesk before. Can you walk me through the process?",
+    "expected_action": "resolve",
+    "expected_response": "Step by step intake form setup guide"
+  },
+  {
+    "id": "TKT-003",
+    "name": "Patricia Wong",
+    "email": "pwong@wongimmigration.com",
+    "subject": "Need a refund for annual subscription",
+    "category": "billing",
+    "priority": "high",
+    "message": "I purchased the annual Growth plan last week for $2,388 but my firm is closing down due to personal reasons. I need a full refund. Please process this as soon as possible.",
+    "expected_action": "escalate",
+    "expected_response": "Escalate to billing team — refund request"
+  },
+  {
+    "id": "TKT-004",
+    "name": "Robert Davidson",
+    "email": "rdavidson@davidsonpi.com",
+    "subject": "Documents not loading in matter",
+    "category": "technical",
+    "priority": "medium",
+    "message": "I uploaded several PDF documents to a personal injury matter yesterday but today none of them are showing up. The matter shows 0 documents even though I can see the upload was successful. This is a critical case with a deadline tomorrow.",
+    "expected_action": "resolve",
+    "expected_response": "Troubleshooting steps for documents not loading"
+  },
+  {
+    "id": "TKT-005",
+    "name": "Amanda Foster",
+    "email": "afoster@fosterfamilylaw.com",
+    "subject": "How to connect Gmail to LexDesk?",
+    "category": "general",
+    "priority": "low",
+    "message": "I want to connect my Gmail account so that client emails automatically link to their matters. I found the integration settings but I am not sure what permissions to grant. Can you help?",
+    "expected_action": "resolve",
+    "expected_response": "Gmail integration setup steps"
+  },
+  {
+    "id": "TKT-006",
+    "name": "Michael O'Brien",
+    "email": "mobrien@obriendefense.com",
+    "subject": "Billing me twice for same month",
+    "category": "billing",
+    "priority": "high",
+    "message": "I just checked my credit card statement and LexDesk has charged me twice this month — once on the 1st for $149 and again on the 15th for $149. I am on the Firm plan. This is clearly an error and I want the duplicate charge reversed immediately.",
+    "expected_action": "escalate",
+    "expected_response": "Escalate to billing team — duplicate charge dispute"
+  },
+  {
+    "id": "TKT-007",
+    "name": "Lisa Carpenter",
+    "email": "lcarpenter@carpenterestates.com",
+    "subject": "How to generate a LEDES invoice?",
+    "category": "general",
+    "priority": "medium",
+    "message": "One of my corporate clients requires invoices in LEDES 1998B format. I have been sending regular PDF invoices but they are now insisting on LEDES. Does LexDesk support this and how do I set it up?",
+    "expected_action": "resolve",
+    "expected_response": "LEDES billing format setup instructions"
+  },
+  {
+    "id": "TKT-008",
+    "name": "David Kim",
+    "email": "dkim@kimlawgroup.com",
+    "subject": "Calendar not syncing with Outlook",
+    "category": "technical",
+    "priority": "medium",
+    "message": "I connected my Outlook calendar about a week ago but court dates I add in LexDesk are not appearing in Outlook. I have missed two reminders already because I rely on Outlook for my schedule. This is a serious problem for my practice.",
+    "expected_action": "resolve",
+    "expected_response": "Calendar sync troubleshooting steps"
+  },
+  {
+    "id": "TKT-009",
+    "name": "Jennifer Walsh",
+    "email": "jwalsh@walshrealestatelaw.com",
+    "subject": "How many users can I add on Firm plan?",
+    "category": "general",
+    "priority": "low",
+    "message": "I am currently on the Firm plan and I want to add two more paralegals to my team. Can I do that on my current plan or do I need to upgrade? What are my options?",
+    "expected_action": "resolve",
+    "expected_response": "Firm plan allows up to 5 users — can add paralegals"
+  },
+  {
+    "id": "TKT-010",
+    "name": "Thomas Greene",
+    "email": "tgreene@greenecriminal.com",
+    "subject": "Migrating from Clio — need help",
+    "category": "general",
+    "priority": "medium",
+    "message": "We are switching from Clio to LexDesk for our 8-attorney criminal defense firm. We have 5 years of client and matter data in Clio. What is the migration process and how long will it take? We cannot afford any data loss.",
+    "expected_action": "resolve",
+    "expected_response": "Clio migration steps and timeline"
+  },
+  {
+    "id": "TKT-011",
+    "name": "Rachel Simmons",
+    "email": "rsimmons@simmonsip.com",
+    "subject": "Two-factor authentication locked me out",
+    "category": "technical",
+    "priority": "high",
+    "message": "I set up 2FA last week and everything was fine. But I got a new phone and now I cannot access my authenticator app codes. I am completely locked out of LexDesk and have client deadlines today. Please help me recover access.",
+    "expected_action": "escalate",
+    "expected_response": "Escalate to technical team — 2FA lockout requires account verification"
+  },
+  {
+    "id": "TKT-012",
+    "name": "Christopher Hall",
+    "email": "chall@hallimmigration.com",
+    "subject": "How to set up recurring invoices?",
+    "category": "general",
+    "priority": "low",
+    "message": "I have several clients on monthly retainer arrangements. Instead of manually creating invoices each month, I want to set up automatic recurring invoices. Is this possible in LexDesk and how do I do it?",
+    "expected_action": "resolve",
+    "expected_response": "Recurring invoice setup instructions"
+  },
+  {
+    "id": "TKT-013",
+    "name": "Susan Taylor",
+    "email": "staylor@tayloremployment.com",
+    "subject": "GDPR data deletion request",
+    "category": "general",
+    "priority": "high",
+    "message": "We have a former client who has submitted a formal GDPR right to erasure request. They want all their personal data deleted from our systems including LexDesk. How do we process this and what is the timeline? We are required to comply within 30 days.",
+    "expected_action": "escalate",
+    "expected_response": "Escalate — GDPR compliance request requires legal/compliance team"
+  },
+  {
+    "id": "TKT-014",
+    "name": "Kevin Murphy",
+    "email": "kmurphy@murphypersonalinjury.com",
+    "subject": "Client portal not working for my client",
+    "category": "technical",
+    "priority": "medium",
+    "message": "I enabled the client portal for one of my personal injury clients and sent them the link. They keep getting an error that says 'Access Denied' when they try to log in. I have double checked that the portal is enabled for their matter. What could be wrong?",
+    "expected_action": "resolve",
+    "expected_response": "Client portal access troubleshooting"
+  },
+  {
+    "id": "TKT-015",
+    "name": "Nancy Peterson",
+    "email": "npeterson@petersondivorce.com",
+    "subject": "Want to cancel my subscription",
+    "category": "billing",
+    "priority": "medium",
+    "message": "I want to cancel my LexDesk subscription. I am retiring from practice at the end of this month. Can you tell me how to cancel and what happens to my data after cancellation? I need to make sure I can export everything before I leave.",
+    "expected_action": "resolve",
+    "expected_response": "Cancellation steps and data export process"
+  },
+  {
+    "id": "TKT-016",
+    "name": "Daniel Brooks",
+    "email": "dbrooks@brookscorporate.com",
+    "subject": "Need Enterprise plan pricing",
+    "category": "billing",
+    "priority": "medium",
+    "message": "We are a 45-attorney corporate law firm considering LexDesk. The Growth plan only covers 15 attorneys. Can you tell me about Enterprise pricing and what additional features are included? We would also need dedicated support and a SLA.",
+    "expected_action": "escalate",
+    "expected_response": "Escalate to sales — Enterprise inquiry"
+  },
+  {
+    "id": "TKT-017",
+    "name": "Laura Jenkins",
+    "email": "ljenkins@jenkinsfamilylaw.com",
+    "subject": "How to use document templates?",
+    "category": "general",
+    "priority": "low",
+    "message": "I heard LexDesk has over 500 legal document templates. I practice family law and I am looking for divorce petition and child custody agreement templates. How do I find and use these templates?",
+    "expected_action": "resolve",
+    "expected_response": "Document template library usage instructions"
+  },
+  {
+    "id": "TKT-018",
+    "name": "Mark Robinson",
+    "email": "mrobinson@robinsoncriminal.com",
+    "subject": "Mobile app keeps crashing",
+    "category": "technical",
+    "priority": "medium",
+    "message": "The LexDesk mobile app on my iPhone keeps crashing every time I try to open a matter. I updated to the latest version yesterday but the problem continues. I use the app in court frequently and this is very disruptive.",
+    "expected_action": "resolve",
+    "expected_response": "Mobile app troubleshooting steps"
+  },
+  {
+    "id": "TKT-019",
+    "name": "Angela Torres",
+    "email": "atorres@torresimmigration.com",
+    "subject": "How to track billable hours?",
+    "category": "general",
+    "priority": "low",
+    "message": "I just switched from keeping manual timesheets to LexDesk. Can you explain the best way to track billable hours in LexDesk? I want to make sure I am capturing all my time accurately before generating invoices.",
+    "expected_action": "resolve",
+    "expected_response": "Time tracking instructions and best practices"
+  },
+  {
+    "id": "TKT-020",
+    "name": "Steven Clark",
+    "email": "sclark@clarkrealestate.com",
+    "subject": "This software is terrible and I want my money back NOW",
+    "category": "billing",
+    "priority": "high",
+    "message": "YOUR SOFTWARE LOST AN ENTIRE MATTER WITH 3 YEARS OF DOCUMENTS. I HAVE A COURT HEARING TOMORROW AND ALL MY FILES ARE GONE. THIS IS COMPLETELY UNACCEPTABLE. I WANT A FULL REFUND AND I AM CONSIDERING LEGAL ACTION IF MY DATA IS NOT RECOVERED IMMEDIATELY.",
+    "expected_action": "escalate",
+    "expected_response": "Escalate immediately — high frustration, data loss claim, legal threat"
+  }
+]

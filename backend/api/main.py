@@ -1,6 +1,7 @@
 """FastAPI application for Customer Support Agent."""
 
 from fastapi import FastAPI, HTTPException, BackgroundTasks
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from pydantic import BaseModel, EmailStr, Field
@@ -8,6 +9,8 @@ from typing import Optional, List, Dict, Any
 from datetime import datetime
 import logging
 import os
+from dotenv import load_dotenv
+load_dotenv()
 
 from database.queries import (
     get_db_pool,
@@ -208,7 +211,7 @@ async def submit_support_form(
         return SupportFormResponse(
             success=True,
             ticket_id=result["ticket_id"],
-            message="Thank you for contacting TaskFlow support! Our AI assistant is processing your request.",
+            message="Thank you for contacting LexDesk support! Our AI assistant is processing your request.",
             estimated_response_time="Usually within 5 minutes"
         )
     
@@ -392,23 +395,11 @@ async def get_channel_metrics(hours: int = 24):
 
 @app.exception_handler(404)
 async def not_found_handler(request, exc):
-    """Handle 404 errors."""
-    return {
-        "error": "Not Found",
-        "detail": str(exc.detail) if hasattr(exc, "detail") else "The requested resource was not found",
-        "status_code": 404
-    }
-
+    return JSONResponse(status_code=404, content={"error": "Not Found", "detail": "The requested resource was not found"})
 
 @app.exception_handler(500)
 async def internal_error_handler(request, exc):
-    """Handle 500 errors."""
-    logger.error(f"Internal server error: {exc}", exc_info=True)
-    return {
-        "error": "Internal Server Error",
-        "detail": "An unexpected error occurred. Our team has been notified.",
-        "status_code": 500
-    }
+    return JSONResponse(status_code=500, content={"error": "Internal Server Error", "detail": "An unexpected error occurred."})
 
 
 if __name__ == "__main__":

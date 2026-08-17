@@ -5,8 +5,8 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "TaskFlow Support",
-  description: "Get help from TaskFlow's AI-powered support team",
+  title: "LexDesk Support",
+  description: "Get help from LexDesk's AI-powered support team",
 };
 
 export default function RootLayout({

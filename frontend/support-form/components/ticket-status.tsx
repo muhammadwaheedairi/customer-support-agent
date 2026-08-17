@@ -185,7 +185,7 @@ export function TicketStatus({ ticketId, onNewTicket }: TicketStatusProps) {
               <div className="flex-1">
                 <div className="flex items-center justify-between mb-1">
                   <span className="font-medium text-sm text-gray-900 dark:text-white">
-                    {message.role === "customer" ? "You" : "TaskFlow AI Assistant"}
+                    {message.role === "customer" ? "You" : "LexDesk AI Assistant"}
                   </span>
                   <span className="text-xs text-gray-500 dark:text-gray-400">
                     {new Date(message.created_at).toLocaleTimeString()}
@@ -206,7 +206,7 @@ export function TicketStatus({ ticketId, onNewTicket }: TicketStatusProps) {
           <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
             <strong>Need more help?</strong> You can reply to the email we sent to your address, or visit our{" "}
             <a
-              href="https://help.taskflow.com"
+              href="https://help.lexdesk.io"
               className="text-blue-600 hover:underline"
               target="_blank"
               rel="noopener noreferrer"
@@ -230,7 +230,7 @@ export function TicketStatus({ ticketId, onNewTicket }: TicketStatusProps) {
           Submit Another Request
         </button>
         <button
-          onClick={() => window.location.href = "https://help.taskflow.com"}
+          onClick={() => window.location.href = "https://help.lexdesk.io"}
           className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium"
         >
           Visit Help Center
