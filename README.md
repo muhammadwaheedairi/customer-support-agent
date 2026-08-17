@@ -65,10 +65,12 @@ Query → Cohere Embed → Qdrant Vector Search → Cohere Rerank → Top-K Resu
 - Knowledge base: 500+ product documentation entries
 
 ### 🎨 **Modern Frontend**
-- Next.js 15 with React 19 and TypeScript
-- Real-time ticket status polling
-- Beautiful UI with Radix UI + Tailwind CSS
-- Responsive design with dark mode support
+- **Landing Page**: Hero section, product preview, feature grid, and CTA
+- **Conversations Workspace**: Full conversation management with filtering (All, Open, Resolved, Escalated)
+- **Real-time Ticket Status**: Live polling and updates
+- **Help Center**: Knowledge base browser (placeholder)
+- **Beautiful UI**: Radix UI + Tailwind CSS with custom design system
+- **Responsive Design**: Mobile-first with DM Sans typography
 
 ### 🚀 **Production-Ready Backend**
 - FastAPI with async/await throughout
@@ -93,9 +95,11 @@ Query → Cohere Embed → Qdrant Vector Search → Cohere Rerank → Top-K Resu
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                           USER INTERFACE LAYER                          │
 │  ┌───────────────────────────────────────────────────────────────────┐  │
-│  │  Next.js Frontend (React 19 + TypeScript + Tailwind CSS)         │  │
-│  │  • Support Form Component    • Ticket Status Polling             │  │
-│  │  • Real-time Updates         • Responsive Design                 │  │
+│  │  Next.js 15 Frontend (React 19 + TypeScript + Tailwind CSS)      │  │
+│  │  • Landing Page (Hero, Features, CTA)                            │  │
+│  │  • Conversations Workspace (List, Thread, Filters)               │  │
+│  │  • Help Center (Knowledge Base Browser)                          │  │
+│  │  • Support Form • Ticket Status • Real-time Updates              │  │
 │  └───────────────────────────────────────────────────────────────────┘  │
 └───────────────────────────────────┬─────────────────────────────────────┘
                                     │ HTTPS/REST API
@@ -310,12 +314,38 @@ customer-support-agent/
 │
 ├── frontend/support-form/            # Next.js frontend
 │   ├── app/                          # App Router (Next.js 15)
+│   │   ├── conversations/            # Conversations workspace
+│   │   │   ├── [id]/                 # Individual conversation thread
+│   │   │   └── page.tsx              # Conversations list page
+│   │   ├── help/                     # Help center
+│   │   │   └── page.tsx              # Knowledge base browser
 │   │   ├── layout.tsx                # Root layout
-│   │   └── page.tsx                  # Support page
+│   │   ├── page.tsx                  # Landing page
+│   │   └── globals.css               # Global styles
 │   ├── components/                   # React components
+│   │   ├── landing/                  # Landing page components
+│   │   │   ├── hero.tsx              # Hero section
+│   │   │   ├── product-preview.tsx   # Product preview
+│   │   │   ├── feature-grid.tsx      # Features grid
+│   │   │   └── final-cta.tsx         # Final call-to-action
+│   │   ├── ui/                       # Radix UI components
+│   │   │   ├── button.tsx            # Button component
+│   │   │   ├── input.tsx             # Input component
+│   │   │   ├── textarea.tsx          # Textarea component
+│   │   │   ├── badge.tsx             # Badge component
+│   │   │   └── status-badge.tsx      # Status badge
+│   │   ├── app-shell.tsx             # App shell layout
+│   │   ├── top-nav.tsx               # Top navigation
+│   │   ├── page-header.tsx           # Page header component
 │   │   ├── support-form.tsx          # Support form with validation
 │   │   ├── ticket-status.tsx         # Ticket status display
-│   │   └── ui/                       # Radix UI components
+│   │   ├── conversations-list.tsx    # Conversations list
+│   │   ├── conversation-row.tsx      # Conversation row item
+│   │   ├── conversation-thread.tsx   # Conversation thread view
+│   │   ├── message-bubble.tsx        # Message bubble
+│   │   ├── ticket-metadata.tsx       # Ticket metadata display
+│   │   ├── new-conversation-modal.tsx # New conversation modal
+│   │   └── empty-state.tsx           # Empty state component
 │   ├── package.json                  # Node dependencies
 │   ├── tailwind.config.ts            # Tailwind configuration
 │   └── tsconfig.json                 # TypeScript config
@@ -337,16 +367,12 @@ customer-support-agent/
 - **PostgreSQL 16** ([Download](https://www.postgresql.org/download/))
 - **Docker & Docker Compose** (Optional, [Download](https://www.docker.com/))
 
-### API Keys Required
+### Required Services
 
-```bash
-# Required
-OPENAI_API_KEY=sk-...              # OpenAI API key
-COHERE_API_KEY=...                 # Cohere API key
-QDRANT_URL=https://...             # Qdrant Cloud URL
-QDRANT_API_KEY=...                 # Qdrant API key
-DATABASE_URL=postgresql://...      # PostgreSQL connection string
-```
+- OpenAI API account
+- Cohere API account (for embeddings and reranking)
+- Qdrant Cloud account (for vector database)
+- PostgreSQL database
 
 ### Option 1: Docker Compose (Recommended)
 
@@ -355,17 +381,9 @@ DATABASE_URL=postgresql://...      # PostgreSQL connection string
 git clone https://github.com/yourusername/customer-support-agent.git
 cd customer-support-agent
 
-# Create .env file
-cat > .env << EOF
-DATABASE_URL=postgresql://postgres:postgres@postgres:5432/customer_support
-OPENAI_API_KEY=sk-your-openai-key
-COHERE_API_KEY=your-cohere-key
-QDRANT_URL=https://your-qdrant-url
-QDRANT_API_KEY=your-qdrant-key
-ENVIRONMENT=development
-LOG_LEVEL=INFO
-CORS_ORIGINS=http://localhost:3000
-EOF
+# Create .env file with your credentials
+cp .env.example .env
+# Edit .env and add your API keys and database URL
 
 # Start all services
 docker-compose up -d
@@ -396,14 +414,9 @@ source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 # Install dependencies
 pip install -r requirements.txt
 
-# Set environment variables
-export DATABASE_URL="postgresql://postgres:postgres@localhost:5432/customer_support"
-export OPENAI_API_KEY="sk-your-key"
-export COHERE_API_KEY="your-cohere-key"
-export QDRANT_URL="https://your-qdrant-url"
-export QDRANT_API_KEY="your-qdrant-key"
-export ENVIRONMENT="development"
-export LOG_LEVEL="INFO"
+# Set environment variables (create .env file)
+# DATABASE_URL, OPENAI_API_KEY, COHERE_API_KEY, QDRANT_URL, QDRANT_API_KEY
+# ENVIRONMENT, LOG_LEVEL
 
 # Initialize database
 createdb customer_support
@@ -435,16 +448,20 @@ npm run dev
 
 ### Testing the System
 
-```bash
-# Manual test: Open http://localhost:3000
-# Fill form with:
-# - Name: "Jane Smith"
-# - Email: "jane@lawfirm.com"
-# - Subject: "How do I set up client intake forms?"
-# - Category: "Technical"
-# - Message: "I need help configuring intake forms for family law cases."
+**Frontend:**
+1. Open http://localhost:3000 - Landing page with hero and features
+2. Click "Try the Workspace" → Navigate to /conversations
+3. Click "New Conversation" → Fill out support form
+4. View conversation thread with real-time updates
+5. Filter conversations by status (All, Open, Resolved, Escalated)
+6. Navigate to /help for knowledge base browser
 
-# API test
+**API Testing:**
+```bash
+# Health check
+curl http://localhost:8000/health
+
+# Submit support form
 curl -X POST http://localhost:8000/support/submit \
   -H "Content-Type: application/json" \
   -d '{
@@ -452,11 +469,16 @@ curl -X POST http://localhost:8000/support/submit \
     "email": "test@example.com",
     "subject": "Password reset help",
     "category": "technical",
-    "message": "I cannot log into my account. How do I reset my password?",
+    "message": "I need help configuring intake forms.",
     "priority": "medium"
   }'
 
-# Run test suite
+# Get ticket status
+curl http://localhost:8000/support/status/{ticket_id}
+```
+
+**Run Test Suite:**
+```bash
 cd backend
 pytest -v --cov=.
 ```
@@ -467,54 +489,64 @@ pytest -v --cov=.
 
 ### Environment Variables
 
-#### Backend (`backend/.env`)
+Create a `.env` file in the backend directory with the following variables:
 
-| Variable | Description | Default | Required |
-|----------|-------------|---------|----------|
-| `DATABASE_URL` | PostgreSQL connection string | - | ✅ |
-| `OPENAI_API_KEY` | OpenAI API key | - | ✅ |
-| `COHERE_API_KEY` | Cohere API key | - | ✅ |
-| `QDRANT_URL` | Qdrant Cloud URL | - | ✅ |
-| `QDRANT_API_KEY` | Qdrant API key | - | ✅ |
-| `ENVIRONMENT` | `development` or `production` | `development` | ❌ |
-| `LOG_LEVEL` | `DEBUG`, `INFO`, `WARNING`, `ERROR` | `INFO` | ❌ |
-| `API_HOST` | API bind host | `0.0.0.0` | ❌ |
-| `API_PORT` | API bind port | `8000` | ❌ |
-| `CORS_ORIGINS` | Allowed CORS origins (comma-separated) | `http://localhost:3000` | ❌ |
+#### Backend Configuration
 
-#### Frontend (`frontend/support-form/.env.local`)
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `DATABASE_URL` | PostgreSQL connection string | ✅ |
+| `OPENAI_API_KEY` | OpenAI API key | ✅ |
+| `COHERE_API_KEY` | Cohere API key | ✅ |
+| `QDRANT_URL` | Qdrant Cloud URL | ✅ |
+| `QDRANT_API_KEY` | Qdrant API key | ✅ |
+| `ENVIRONMENT` | `development` or `production` | ✅ |
+| `LOG_LEVEL` | `DEBUG`, `INFO`, `WARNING`, `ERROR` | ❌ |
+| `API_HOST` | API bind host | ❌ |
+| `API_PORT` | API bind port | ❌ |
+| `CORS_ORIGINS` | Allowed CORS origins (comma-separated) | ❌ |
 
-| Variable | Description | Default | Required |
-|----------|-------------|---------|----------|
-| `NEXT_PUBLIC_API_URL` | Backend API URL | `http://localhost:8000` | ✅ |
+#### Frontend Configuration
+
+Create a `.env.local` file in the frontend directory:
+
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `NEXT_PUBLIC_API_URL` | Backend API URL | ✅ |
 
 ---
 
 ## 🌐 Deployment
 
-### Kubernetes
+### Docker Deployment
+
+```bash
+# Build images
+docker-compose build
+
+# Start services
+docker-compose up -d
+
+# Check status
+docker-compose ps
+
+# View logs
+docker-compose logs -f
+```
+
+### Kubernetes Deployment
 
 ```bash
 # Create namespace
 kubectl create namespace customer-support
 
-# Create secrets
-kubectl create secret generic support-secrets \
-  --from-literal=OPENAI_API_KEY=sk-... \
-  --from-literal=COHERE_API_KEY=... \
-  --from-literal=QDRANT_API_KEY=... \
-  --from-literal=DATABASE_URL=postgresql://... \
-  -n customer-support
-
-# Deploy backend
+# Configure secrets (store your credentials securely)
+# Apply deployment manifests
+kubectl apply -f k8s/configmap.yaml
 kubectl apply -f k8s/deployment-backend.yaml
-kubectl apply -f k8s/service-backend.yaml
-
-# Deploy frontend
 kubectl apply -f k8s/deployment-frontend.yaml
+kubectl apply -f k8s/service-backend.yaml
 kubectl apply -f k8s/service-frontend.yaml
-
-# Enable autoscaling
 kubectl apply -f k8s/hpa.yaml
 
 # Check status
@@ -522,26 +554,33 @@ kubectl get pods -n customer-support
 kubectl get svc -n customer-support
 ```
 
-### Production Checklist
+### Production Best Practices
 
-- [ ] Set strong database passwords
-- [ ] Configure production CORS origins
-- [ ] Enable HTTPS with TLS certificates
-- [ ] Set up monitoring (Prometheus + Grafana)
-- [ ] Configure database backups
-- [ ] Set up log aggregation (ELK/Loki)
-- [ ] Configure resource limits and requests
-- [ ] Enable horizontal pod autoscaling
-- [ ] Set up CI/CD pipeline (GitHub Actions)
-- [ ] Configure alerting (PagerDuty/Opsgenie)
-- [ ] Enable rate limiting
-- [ ] Set up health check endpoints
+- Use environment-specific configuration files
+- Enable HTTPS with TLS certificates
+- Set up monitoring and alerting
+- Configure database backups
+- Implement log aggregation
+- Set resource limits and requests
+- Enable horizontal pod autoscaling
+- Set up CI/CD pipeline
+- Configure health check endpoints
+- Implement rate limiting
 
 ---
 
 ## 📚 API Documentation
 
-### Endpoints
+### Frontend Routes
+
+| Route | Description |
+|-------|-------------|
+| `/` | Landing page with hero, features, and CTA |
+| `/conversations` | Conversations workspace with list view |
+| `/conversations/[id]` | Individual conversation thread |
+| `/help` | Help center and knowledge base browser |
+
+### Backend API Endpoints
 
 #### Support
 
@@ -636,6 +675,15 @@ pytest tests/test_e2e.py
 ---
 
 ## 📖 Documentation
+
+### Frontend Pages
+
+- **Landing Page** (`/`): Hero section, product preview, feature grid, final CTA
+- **Conversations** (`/conversations`): Full workspace with conversation list, filtering (All/Open/Resolved/Escalated), and status badges
+- **Conversation Thread** (`/conversations/[id]`): Individual conversation view with message history and metadata
+- **Help Center** (`/help`): Knowledge base browser (Phase 5 implementation)
+
+### Backend Documentation
 
 - **Agent System Prompt**: [`backend/agent/prompts.py`](backend/agent/prompts.py)
 - **Escalation Rules**: [`backend/context/escalation-rules.md`](backend/context/escalation-rules.md)
