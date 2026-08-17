@@ -45,6 +45,16 @@
 - **Scalability**: Handles 1000+ concurrent users with horizontal scaling
 - **Intelligence**: Corrective RAG pipeline ensures accurate, contextual responses
 
+### 🎨 Hero Section Preview
+
+<div align="center">
+
+![LexDesk Hero Section](./frontend/support-form/public/screenshots/hero-section.jpg)
+
+*Landing page hero section showcasing the AI-powered customer support workspace*
+
+</div>
+
 ---
 
 ## ✨ Key Features
