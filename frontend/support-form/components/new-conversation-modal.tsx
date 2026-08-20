@@ -5,6 +5,7 @@ import { X, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { useAuth, useUser } from "@clerk/nextjs";
 import { clsx } from "clsx";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
@@ -45,13 +46,12 @@ interface NewConversationModalProps {
 }
 
 export function NewConversationModal({ onClose, onSuccess }: NewConversationModalProps) {
-  // Try to get stored user info
-  const storedEmail = typeof window !== "undefined" ? localStorage.getItem("lexdesk_user_email") : "";
-  const storedName = typeof window !== "undefined" ? localStorage.getItem("lexdesk_user_name") : "";
+  const { getToken } = useAuth();
+  const { user } = useUser();
 
   const [formData, setFormData] = useState<FormData>({
-    name: storedName || "",
-    email: storedEmail || "",
+    name: user?.fullName || user?.firstName || "",
+    email: user?.primaryEmailAddress?.emailAddress || "",
     subject: "",
     category: "general",
     priority: "medium",
@@ -85,15 +85,12 @@ export function NewConversationModal({ onClose, onSuccess }: NewConversationModa
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-
     if (errors[name as keyof FormErrors]) {
       setErrors((prev) => ({ ...prev, [name]: undefined }));
     }
   };
 
-  const handleBlur = (
-    e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
+  const handleBlur = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     const error = validateField(name as keyof FormData, value);
     if (error) {
@@ -103,14 +100,10 @@ export function NewConversationModal({ onClose, onSuccess }: NewConversationModa
 
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
-
     ["name", "email", "subject", "message"].forEach((field) => {
       const error = validateField(field as keyof FormData, formData[field as keyof FormData]);
-      if (error) {
-        newErrors[field as keyof FormErrors] = error;
-      }
+      if (error) newErrors[field as keyof FormErrors] = error;
     });
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -124,9 +117,19 @@ export function NewConversationModal({ onClose, onSuccess }: NewConversationModa
     setIsSubmitting(true);
 
     try {
+      // Clerk JWT token lo
+      const token = await getToken();
+
+      if (!token) {
+        throw new Error("Authentication required. Please sign in again.");
+      }
+
       const response = await fetch(`${API_URL}/support/submit`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
         body: JSON.stringify(formData),
       });
 
@@ -136,18 +139,8 @@ export function NewConversationModal({ onClose, onSuccess }: NewConversationModa
       }
 
       const data = await response.json();
-
-      // Store user info in localStorage
-      localStorage.setItem("lexdesk_user_email", formData.email);
-      localStorage.setItem("lexdesk_user_name", formData.name);
-
-      // Store ticket ID in localStorage
-      const storedIds = localStorage.getItem("lexdesk_ticket_ids");
-      const ticketIds = storedIds ? JSON.parse(storedIds) : [];
-      ticketIds.unshift(data.ticket_id); // Add to beginning
-      localStorage.setItem("lexdesk_ticket_ids", JSON.stringify(ticketIds));
-
       onSuccess(data.ticket_id);
+
     } catch (error) {
       console.error("Form submission error:", error);
       setSubmitError(
@@ -181,7 +174,7 @@ export function NewConversationModal({ onClose, onSuccess }: NewConversationModa
             </div>
           )}
 
-          {/* Name Field */}
+          {/* Name */}
           <div>
             <label htmlFor="name" className="block label-md text-tertiary mb-xs">
               Your Name <span className="text-error">*</span>
@@ -200,7 +193,7 @@ export function NewConversationModal({ onClose, onSuccess }: NewConversationModa
             {errors.name && <p className="mt-xs body-sm text-error">{errors.name}</p>}
           </div>
 
-          {/* Email Field */}
+          {/* Email */}
           <div>
             <label htmlFor="email" className="block label-md text-tertiary mb-xs">
               Email Address <span className="text-error">*</span>
@@ -219,7 +212,7 @@ export function NewConversationModal({ onClose, onSuccess }: NewConversationModa
             {errors.email && <p className="mt-xs body-sm text-error">{errors.email}</p>}
           </div>
 
-          {/* Subject Field */}
+          {/* Subject */}
           <div>
             <label htmlFor="subject" className="block label-md text-tertiary mb-xs">
               Subject <span className="text-error">*</span>
@@ -252,9 +245,7 @@ export function NewConversationModal({ onClose, onSuccess }: NewConversationModa
                 className="flex w-full rounded-lg border border-border bg-neutral px-4 py-3 h-12 text-md text-tertiary focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
               >
                 {CATEGORIES.map((cat) => (
-                  <option key={cat.value} value={cat.value}>
-                    {cat.label}
-                  </option>
+                  <option key={cat.value} value={cat.value}>{cat.label}</option>
                 ))}
               </select>
             </div>
@@ -271,15 +262,13 @@ export function NewConversationModal({ onClose, onSuccess }: NewConversationModa
                 className="flex w-full rounded-lg border border-border bg-neutral px-4 py-3 h-12 text-md text-tertiary focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
               >
                 {PRIORITIES.map((pri) => (
-                  <option key={pri.value} value={pri.value}>
-                    {pri.label}
-                  </option>
+                  <option key={pri.value} value={pri.value}>{pri.label}</option>
                 ))}
               </select>
             </div>
           </div>
 
-          {/* Message Field */}
+          {/* Message */}
           <div>
             <label htmlFor="message" className="block label-md text-tertiary mb-xs">
               How can we help? <span className="text-error">*</span>
@@ -296,9 +285,7 @@ export function NewConversationModal({ onClose, onSuccess }: NewConversationModa
               required
             />
             {errors.message && <p className="mt-xs body-sm text-error">{errors.message}</p>}
-            <p className="mt-xs body-sm text-muted">
-              {formData.message.length}/5000 characters
-            </p>
+            <p className="mt-xs body-sm text-muted">{formData.message.length}/5000 characters</p>
           </div>
 
           {/* Actions */}

@@ -5,15 +5,10 @@ import { ConversationRow } from "./conversation-row";
 import { EmptyState } from "./empty-state";
 import { MessageSquare, Loader2 } from "lucide-react";
 import { Button } from "./ui/button";
+import { useAuth } from "@clerk/nextjs";
 import { clsx } from "clsx";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-
-interface Message {
-  role: string;
-  content: string;
-  created_at: string;
-}
 
 interface TicketData {
   ticket_id: string;
@@ -21,7 +16,8 @@ interface TicketData {
   subject: string;
   category: string;
   created_at: string;
-  messages: Message[];
+  message_count: number;
+  has_agent_response: boolean;
 }
 
 interface ConversationsListProps {
@@ -29,6 +25,7 @@ interface ConversationsListProps {
 }
 
 export function ConversationsList({ onNewConversation }: ConversationsListProps) {
+  const { getToken } = useAuth();
   const [tickets, setTickets] = useState<TicketData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -40,44 +37,57 @@ export function ConversationsList({ onNewConversation }: ConversationsListProps)
 
   const loadTickets = async () => {
     try {
-      // Get ticket IDs from localStorage
-      const storedTicketIds = localStorage.getItem("lexdesk_ticket_ids");
+      setLoading(true);
+      setError(null);
 
-      if (!storedTicketIds) {
+      // Clerk JWT token lo
+      const token = await getToken();
+
+      if (!token) {
+        setError("Authentication required");
         setLoading(false);
         return;
       }
 
-      const ticketIds: string[] = JSON.parse(storedTicketIds);
-
-      // Fetch each ticket
-      const ticketPromises = ticketIds.map(async (ticketId) => {
-        try {
-          const response = await fetch(`${API_URL}/support/status/${ticketId}`);
-          if (response.ok) {
-            return await response.json();
-          }
-          return null;
-        } catch (err) {
-          console.error(`Failed to fetch ticket ${ticketId}:`, err);
-          return null;
-        }
+      // Backend se sirf apne tickets fetch karo
+      const response = await fetch(`${API_URL}/tickets/my`, {
+        headers: {
+          "Authorization": `Bearer ${token}`,
+        },
       });
 
-      const ticketResults = await Promise.all(ticketPromises);
-      const validTickets = ticketResults.filter((t): t is TicketData => t !== null);
+      if (!response.ok) {
+        throw new Error("Failed to load conversations");
+      }
 
-      // Sort by created date, newest first
-      validTickets.sort((a, b) =>
-        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-      );
-
-      setTickets(validTickets);
+      const data = await response.json();
+      setTickets(data.tickets || []);
       setLoading(false);
+
     } catch (err) {
       console.error("Failed to load tickets:", err);
       setError("Failed to load conversations");
       setLoading(false);
+    }
+  };
+
+  const handleDelete = async (ticketId: string) => {
+    if (!confirm("Are you sure you want to delete this conversation?")) return;
+
+    try {
+      const token = await getToken();
+      const response = await fetch(`${API_URL}/tickets/${ticketId}`, {
+        method: "DELETE",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        setTickets((prev) => prev.filter((t) => t.ticket_id !== ticketId));
+      }
+    } catch (err) {
+      console.error("Failed to delete ticket:", err);
     }
   };
 
@@ -160,23 +170,18 @@ export function ConversationsList({ onNewConversation }: ConversationsListProps)
         />
       ) : (
         <div className="border border-border rounded-lg overflow-hidden bg-neutral">
-          {filteredTickets.map((ticket) => {
-            const lastMessage = ticket.messages[ticket.messages.length - 1];
-            const hasAgentResponse = ticket.messages.some(m => m.role === "agent");
-
-            return (
-              <ConversationRow
-                key={ticket.ticket_id}
-                ticketId={ticket.ticket_id}
-                subject={ticket.subject}
-                status={ticket.status}
-                category={ticket.category}
-                lastMessagePreview={lastMessage?.content}
-                createdAt={ticket.created_at}
-                hasUnread={!hasAgentResponse}
-              />
-            );
-          })}
+          {filteredTickets.map((ticket) => (
+            <ConversationRow
+              key={ticket.ticket_id}
+              ticketId={ticket.ticket_id}
+              subject={ticket.subject}
+              status={ticket.status}
+              category={ticket.category}
+              createdAt={ticket.created_at}
+              hasUnread={!ticket.has_agent_response}
+              onDelete={() => handleDelete(ticket.ticket_id)}
+            />
+          ))}
         </div>
       )}
     </div>

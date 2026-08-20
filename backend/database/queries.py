@@ -9,19 +9,15 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-# Global connection pool
 _pool: Optional[asyncpg.Pool] = None
 
 
 async def get_db_pool() -> asyncpg.Pool:
-    """Get or create database connection pool."""
     global _pool
-
     if _pool is None:
         database_url = os.getenv("DATABASE_URL")
         if not database_url:
             raise ValueError("DATABASE_URL environment variable not set")
-
         _pool = await asyncpg.create_pool(
             database_url,
             min_size=5,
@@ -29,14 +25,11 @@ async def get_db_pool() -> asyncpg.Pool:
             command_timeout=60,
         )
         logger.info("Database connection pool created")
-
     return _pool
 
 
 async def close_db_pool() -> None:
-    """Close database connection pool."""
     global _pool
-
     if _pool:
         await _pool.close()
         _pool = None
@@ -48,42 +41,37 @@ async def close_db_pool() -> None:
 async def create_customer(
     email: str,
     name: Optional[str] = None,
-    metadata: Optional[Dict[str, Any]] = None
+    metadata: Optional[Dict[str, Any]] = None,
+    clerk_user_id: Optional[str] = None
 ) -> str:
-    """Create a new customer and return customer ID."""
     pool = await get_db_pool()
 
     async with pool.acquire() as conn:
         customer_id = await conn.fetchval(
             """
-            INSERT INTO customers (email, name, metadata)
-            VALUES ($1, $2, $3)
-            ON CONFLICT (email) DO UPDATE SET name = EXCLUDED.name
+            INSERT INTO customers (email, name, metadata, clerk_user_id)
+            VALUES ($1, $2, $3, $4)
+            ON CONFLICT (email) DO UPDATE 
+            SET name = EXCLUDED.name,
+                clerk_user_id = COALESCE(EXCLUDED.clerk_user_id, customers.clerk_user_id)
             RETURNING id
             """,
             email,
             name,
-            json.dumps(metadata or {})
+            json.dumps(metadata or {}),
+            clerk_user_id
         )
 
     logger.info(f"Customer created/updated: {customer_id}")
     return str(customer_id)
 
-
 async def get_customer_by_email(email: str) -> Optional[Dict[str, Any]]:
-    """Get customer by email address."""
     pool = await get_db_pool()
-
     async with pool.acquire() as conn:
         row = await conn.fetchrow(
-            """
-            SELECT id, email, name, created_at, metadata
-            FROM customers
-            WHERE email = $1
-            """,
+            "SELECT id, email, name, created_at, metadata, clerk_user_id FROM customers WHERE email = $1",
             email
         )
-
     if row:
         return dict(row)
     return None
@@ -97,31 +85,30 @@ async def create_ticket(
     category: str,
     message: str,
     priority: str = "medium",
-    channel: str = "web_form"
+    channel: str = "web_form",
+    clerk_user_id: Optional[str] = None
 ) -> str:
-    """Create a support ticket and initial message."""
+    """Create a support ticket linked to Clerk user."""
     pool = await get_db_pool()
 
     async with pool.acquire() as conn:
         async with conn.transaction():
             ticket_id = await conn.fetchval(
                 """
-                INSERT INTO tickets (customer_id, subject, category, priority, channel, status)
-                VALUES ($1, $2, $3, $4, $5, 'open')
+                INSERT INTO tickets (customer_id, subject, category, priority, channel, status, clerk_user_id)
+                VALUES ($1, $2, $3, $4, $5, 'open', $6)
                 RETURNING id
                 """,
                 customer_id,
                 subject,
                 category,
                 priority,
-                channel
+                channel,
+                clerk_user_id
             )
 
             await conn.execute(
-                """
-                INSERT INTO messages (ticket_id, role, content)
-                VALUES ($1, 'customer', $2)
-                """,
+                "INSERT INTO messages (ticket_id, role, content) VALUES ($1, 'customer', $2)",
                 ticket_id,
                 message
             )
@@ -141,22 +128,20 @@ async def create_ticket(
 
 
 async def get_ticket_by_id(ticket_id: str) -> Optional[Dict[str, Any]]:
-    """Get ticket details by ID."""
     pool = await get_db_pool()
-
     async with pool.acquire() as conn:
         row = await conn.fetchrow(
             """
             SELECT t.id, t.customer_id, t.subject, t.category, t.status,
                    t.priority, t.channel, t.created_at, t.resolved_at,
+                   t.clerk_user_id, t.deleted_at,
                    c.email as customer_email, c.name as customer_name
             FROM tickets t
             JOIN customers c ON t.customer_id = c.id
-            WHERE t.id = $1
+            WHERE t.id = $1 AND t.deleted_at IS NULL
             """,
             ticket_id
         )
-
     if row:
         return dict(row)
     return None
@@ -167,9 +152,7 @@ async def update_ticket_status(
     status: str,
     resolution_notes: Optional[str] = None
 ) -> None:
-    """Update ticket status."""
     pool = await get_db_pool()
-
     async with pool.acquire() as conn:
         if status == "resolved":
             await conn.execute(
@@ -178,22 +161,13 @@ async def update_ticket_status(
                 SET status = $1, resolution_notes = $2, resolved_at = NOW()
                 WHERE id = $3
                 """,
-                status,
-                resolution_notes,
-                ticket_id
+                status, resolution_notes, ticket_id
             )
         else:
             await conn.execute(
-                """
-                UPDATE tickets
-                SET status = $1, resolution_notes = $2
-                WHERE id = $3
-                """,
-                status,
-                resolution_notes,
-                ticket_id
+                "UPDATE tickets SET status = $1, resolution_notes = $2 WHERE id = $3",
+                status, resolution_notes, ticket_id
             )
-
     logger.info(f"Ticket {ticket_id} status updated to {status}")
 
 
@@ -206,9 +180,7 @@ async def create_message(
     sentiment_score: Optional[float] = None,
     metadata: Optional[Dict[str, Any]] = None
 ) -> str:
-    """Create a message in a ticket."""
     pool = await get_db_pool()
-
     async with pool.acquire() as conn:
         message_id = await conn.fetchval(
             """
@@ -216,32 +188,23 @@ async def create_message(
             VALUES ($1, $2, $3, $4, $5)
             RETURNING id
             """,
-            ticket_id,
-            role,
-            content,
-            sentiment_score,
-            json.dumps(metadata or {})
+            ticket_id, role, content, sentiment_score, json.dumps(metadata or {})
         )
-
     return str(message_id)
 
 
 async def get_messages_by_ticket(ticket_id: str) -> List[Dict[str, Any]]:
-    """Get all messages for a ticket."""
     pool = await get_db_pool()
-
     async with pool.acquire() as conn:
         rows = await conn.fetch(
             """
-            SELECT id, ticket_id, role, content, sentiment_score,
-                   created_at, metadata
+            SELECT id, ticket_id, role, content, sentiment_score, created_at, metadata
             FROM messages
             WHERE ticket_id = $1
             ORDER BY created_at ASC
             """,
             ticket_id
         )
-
     return [dict(row) for row in rows]
 
 
@@ -252,9 +215,7 @@ async def create_conversation(
     customer_id: str,
     channel: str = "web_form"
 ) -> str:
-    """Create a conversation record."""
     pool = await get_db_pool()
-
     async with pool.acquire() as conn:
         conversation_id = await conn.fetchval(
             """
@@ -262,38 +223,29 @@ async def create_conversation(
             VALUES ($1, $2, $3, 'active')
             RETURNING id
             """,
-            ticket_id,
-            customer_id,
-            channel
+            ticket_id, customer_id, channel
         )
-
     return str(conversation_id)
 
 
 async def get_conversation_by_id(conversation_id: str) -> Optional[Dict[str, Any]]:
-    """Get conversation details."""
     pool = await get_db_pool()
-
     async with pool.acquire() as conn:
         row = await conn.fetchrow(
             """
             SELECT id, ticket_id, customer_id, channel, status,
                    created_at, ended_at, sentiment_score, metadata
-            FROM conversations
-            WHERE id = $1
+            FROM conversations WHERE id = $1
             """,
             conversation_id
         )
-
     if row:
         return dict(row)
     return None
 
 
 async def get_customer_history(customer_id: str, limit: int = 20) -> List[Dict[str, Any]]:
-    """Get customer's conversation history."""
     pool = await get_db_pool()
-
     async with pool.acquire() as conn:
         rows = await conn.fetch(
             """
@@ -304,25 +256,19 @@ async def get_customer_history(customer_id: str, limit: int = 20) -> List[Dict[s
             JOIN tickets t ON c.ticket_id = t.id
             LEFT JOIN messages m ON m.ticket_id = t.id
             WHERE c.customer_id = $1
+              AND t.deleted_at IS NULL
             ORDER BY m.created_at DESC
             LIMIT $2
             """,
-            customer_id,
-            limit
+            customer_id, limit
         )
-
     return [dict(row) for row in rows]
 
 
 # Knowledge base operations
 
-async def search_knowledge_base(
-    query: str,
-    limit: int = 5
-) -> List[Dict[str, Any]]:
-    """Search knowledge base using text similarity."""
+async def search_knowledge_base(query: str, limit: int = 5) -> List[Dict[str, Any]]:
     pool = await get_db_pool()
-
     async with pool.acquire() as conn:
         rows = await conn.fetch(
             """
@@ -336,10 +282,8 @@ async def search_knowledge_base(
             ORDER BY relevance DESC
             LIMIT $2
             """,
-            query,
-            limit
+            query, limit
         )
-
     return [dict(row) for row in rows]
 
 
@@ -348,21 +292,12 @@ async def insert_knowledge_entry(
     content: str,
     category: Optional[str] = None
 ) -> str:
-    """Insert a knowledge base entry."""
     pool = await get_db_pool()
-
     async with pool.acquire() as conn:
         entry_id = await conn.fetchval(
-            """
-            INSERT INTO knowledge_base (title, content, category)
-            VALUES ($1, $2, $3)
-            RETURNING id
-            """,
-            title,
-            content,
-            category
+            "INSERT INTO knowledge_base (title, content, category) VALUES ($1, $2, $3) RETURNING id",
+            title, content, category
         )
-
     return str(entry_id)
 
 
@@ -374,19 +309,14 @@ async def record_metric(
     channel: Optional[str] = None,
     dimensions: Optional[Dict[str, Any]] = None
 ) -> None:
-    """Record a performance metric."""
     pool = await get_db_pool()
-
     async with pool.acquire() as conn:
         await conn.execute(
             """
             INSERT INTO agent_metrics (metric_name, metric_value, channel, dimensions)
             VALUES ($1, $2, $3, $4)
             """,
-            metric_name,
-            metric_value,
-            channel,
-            json.dumps(dimensions or {})
+            metric_name, metric_value, channel, json.dumps(dimensions or {})
         )
 
 
@@ -394,25 +324,21 @@ async def get_metrics_summary(
     hours: int = 24,
     channel: Optional[str] = None
 ) -> Dict[str, Any]:
-    """Get metrics summary for the last N hours."""
     pool = await get_db_pool()
-
     async with pool.acquire() as conn:
-        query = """
-            SELECT
-                metric_name,
-                AVG(metric_value) as avg_value,
-                MIN(metric_value) as min_value,
-                MAX(metric_value) as max_value,
-                COUNT(*) as count
+        query = f"""
+            SELECT metric_name,
+                   AVG(metric_value) as avg_value,
+                   MIN(metric_value) as min_value,
+                   MAX(metric_value) as max_value,
+                   COUNT(*) as count
             FROM agent_metrics
-            WHERE recorded_at > NOW() - INTERVAL '%s hours'
-        """ % hours
-
+            WHERE recorded_at > NOW() - INTERVAL '{hours} hours'
+        """
         if channel:
-            query += " AND channel = $1"
-            rows = await conn.fetch(query + " GROUP BY metric_name", channel)
+            query += " AND channel = $1 GROUP BY metric_name"
+            rows = await conn.fetch(query, channel)
         else:
-            rows = await conn.fetch(query + " GROUP BY metric_name")
-
+            query += " GROUP BY metric_name"
+            rows = await conn.fetch(query)
     return {row['metric_name']: dict(row) for row in rows}

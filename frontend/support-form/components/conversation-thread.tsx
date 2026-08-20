@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { MessageBubble } from "./message-bubble";
 import { TicketMetadata } from "./ticket-metadata";
 import { Loader2, AlertCircle } from "lucide-react";
 import { Button } from "./ui/button";
+import { useAuth } from "@clerk/nextjs";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
@@ -31,59 +32,72 @@ interface ConversationThreadProps {
 }
 
 export function ConversationThread({ ticketId }: ConversationThreadProps) {
+  const { getToken } = useAuth();
   const [ticketData, setTicketData] = useState<TicketData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [pollingCount, setPollingCount] = useState(0);
 
-  useEffect(() => {
-    const fetchTicketStatus = async () => {
-      try {
-        const response = await fetch(`${API_URL}/support/status/${ticketId}`);
+  const fetchTicketStatus = useCallback(async (): Promise<boolean> => {
+    try {
+      const token = await getToken();
 
-        if (!response.ok) {
-          throw new Error("Failed to fetch ticket status");
-        }
-
-        const data = await response.json();
-        setTicketData(data);
+      if (!token) {
+        setError("Authentication required");
         setLoading(false);
-
-        // Check if we have an agent response
-        const hasAgentResponse = data.messages.some(
-          (msg: Message) => msg.role === "agent"
-        );
-
-        // Stop polling once we have an agent response or after 30 seconds (10 polls)
-        if (hasAgentResponse || pollingCount >= 10) {
-          return true; // Stop polling
-        }
-
-        return false; // Continue polling
-      } catch (err) {
-        console.error("Fetch ticket status error:", err);
-        setError("Failed to fetch ticket status");
-        setLoading(false);
-        return true; // Stop polling on error
+        return true;
       }
-    };
 
-    // Initial fetch
+      const response = await fetch(`${API_URL}/support/status/${ticketId}`, {
+        headers: {
+          "Authorization": `Bearer ${token}`,
+        },
+      });
+
+      if (response.status === 403) {
+        setError("You don't have permission to view this conversation");
+        setLoading(false);
+        return true;
+      }
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch ticket status");
+      }
+
+      const data = await response.json();
+      setTicketData(data);
+      setLoading(false);
+
+      const hasAgentResponse = data.messages.some(
+        (msg: Message) => msg.role === "agent"
+      );
+
+      if (hasAgentResponse || pollingCount >= 10) {
+        return true;
+      }
+
+      return false;
+    } catch (err) {
+      console.error("Fetch ticket status error:", err);
+      setError("Failed to fetch ticket status");
+      setLoading(false);
+      return true;
+    }
+  }, [ticketId, pollingCount, getToken]);
+
+  useEffect(() => {
     fetchTicketStatus();
 
-    // Set up polling every 3 seconds only if no agent response yet
     const pollInterval = setInterval(async () => {
       setPollingCount((prev) => prev + 1);
       const shouldStop = await fetchTicketStatus();
-
       if (shouldStop) {
         clearInterval(pollInterval);
       }
     }, 3000);
 
-    // Cleanup
     return () => clearInterval(pollInterval);
-  }, [ticketId, pollingCount]);
+  }, [fetchTicketStatus]);
 
   if (loading && !ticketData) {
     return (
@@ -147,7 +161,7 @@ export function ConversationThread({ ticketId }: ConversationThreadProps) {
           {hasAgentResponse && (
             <div className="border-t border-border px-lg py-md bg-surface">
               <p className="body-sm text-muted">
-                <strong>Need more help?</strong> You can start a new conversation or email us at{" "}
+                <strong>Need more help?</strong> Start a new conversation or email us at{" "}
                 <a href="mailto:support@lexdesk.io" className="text-tertiary hover:underline">
                   support@lexdesk.io
                 </a>
