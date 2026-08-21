@@ -113,6 +113,15 @@ async def get_current_user(
         raise HTTPException(status_code=401, detail="Invalid token claims")
     return user_id
 
+async def get_admin_user(
+    clerk_user_id: str = Depends(get_current_user)
+) -> str:
+    """Only admin user can access."""
+    admin_id = os.getenv("ADMIN_USER_ID")
+    if clerk_user_id != admin_id:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    return clerk_user_id
+
 async def get_optional_user(request: Request) -> Optional[str]:
     auth_header = request.headers.get("Authorization")
     if not auth_header or not auth_header.startswith("Bearer "):
@@ -471,6 +480,111 @@ async def get_channel_metrics(
     except Exception as e:
         logger.error(f"Get metrics failed: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Failed to retrieve metrics")
+
+@app.get("/admin/tickets", tags=["Admin"])
+@limiter.limit("30/minute")
+async def get_all_tickets(
+    request: Request,
+    status: Optional[str] = None,
+    limit: int = 50,
+    clerk_user_id: str = Depends(get_admin_user)
+):
+    """Get all tickets — admin only."""
+    try:
+        pool = await get_db_pool()
+        async with pool.acquire() as conn:
+            query = """
+                SELECT 
+                    t.id, t.subject, t.category, t.status,
+                    t.priority, t.created_at, t.resolved_at,
+                    t.clerk_user_id,
+                    c.email as customer_email,
+                    c.name as customer_name,
+                    COUNT(m.id) as message_count,
+                    BOOL_OR(m.role = 'agent') as has_agent_response
+                FROM tickets t
+                JOIN customers c ON t.customer_id = c.id
+                LEFT JOIN messages m ON m.ticket_id = t.id
+                WHERE t.deleted_at IS NULL
+            """
+            params = []
+            if status:
+                query += f" AND t.status = ${len(params) + 1}"
+                params.append(status)
+
+            query += f"""
+                GROUP BY t.id, t.subject, t.category, t.status,
+                         t.priority, t.created_at, t.resolved_at,
+                         t.clerk_user_id, c.email, c.name
+                ORDER BY t.created_at DESC
+                LIMIT ${len(params) + 1}
+            """
+            params.append(limit)
+
+            rows = await conn.fetch(query, *params)
+
+        tickets = [
+            {
+                "ticket_id": str(row["id"]),
+                "subject": row["subject"],
+                "category": row["category"],
+                "status": row["status"],
+                "priority": row["priority"],
+                "created_at": row["created_at"].isoformat(),
+                "resolved_at": row["resolved_at"].isoformat() if row["resolved_at"] else None,
+                "customer_email": row["customer_email"],
+                "customer_name": row["customer_name"],
+                "message_count": row["message_count"],
+                "has_agent_response": row["has_agent_response"] or False,
+            }
+            for row in rows
+        ]
+
+        return {"tickets": tickets, "total": len(tickets)}
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Get all tickets failed: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Failed to retrieve tickets")
+
+
+@app.get("/admin/stats", tags=["Admin"])
+@limiter.limit("30/minute")
+async def get_admin_stats(
+    request: Request,
+    clerk_user_id: str = Depends(get_admin_user)
+):
+    """Get admin dashboard stats."""
+    try:
+        pool = await get_db_pool()
+        async with pool.acquire() as conn:
+            total = await conn.fetchval("SELECT COUNT(*) FROM tickets WHERE deleted_at IS NULL")
+            open_count = await conn.fetchval("SELECT COUNT(*) FROM tickets WHERE status = 'open' AND deleted_at IS NULL")
+            escalated = await conn.fetchval("SELECT COUNT(*) FROM tickets WHERE status = 'escalated' AND deleted_at IS NULL")
+            resolved = await conn.fetchval("SELECT COUNT(*) FROM tickets WHERE status = 'resolved' AND deleted_at IS NULL")
+            total_customers = await conn.fetchval("SELECT COUNT(*) FROM customers WHERE clerk_user_id IS NOT NULL")
+            avg_response = await conn.fetchval("""
+                SELECT AVG(EXTRACT(EPOCH FROM (m.created_at - t.created_at)))
+                FROM messages m
+                JOIN tickets t ON m.ticket_id = t.id
+                WHERE m.role = 'agent'
+            """)
+
+        return {
+            "total_tickets": total,
+            "open_tickets": open_count,
+            "escalated_tickets": escalated,
+            "resolved_tickets": resolved,
+            "total_customers": total_customers,
+            "avg_response_seconds": float(avg_response) if avg_response else None,
+            "escalation_rate": round((escalated / total * 100), 1) if total > 0 else 0,
+            "resolution_rate": round((resolved / total * 100), 1) if total > 0 else 0,
+        }
+
+    except Exception as e:
+        logger.error(f"Get admin stats failed: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Failed to retrieve stats")        
 
 
 @app.get("/help/search", tags=["Help"])

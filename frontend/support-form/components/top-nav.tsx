@@ -3,10 +3,13 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { clsx } from "clsx";
-import { UserButton, Show } from "@clerk/nextjs";
+import { UserButton, Show, useAuth } from "@clerk/nextjs";
 
 export function TopNav() {
   const pathname = usePathname();
+  const { userId } = useAuth();
+  const adminId = process.env.NEXT_PUBLIC_ADMIN_USER_ID;
+  const isAdmin = userId === adminId;
 
   const navItems = [
     {
@@ -19,6 +22,11 @@ export function TopNav() {
       label: "Help Center",
       active: pathname?.startsWith("/help"),
     },
+    ...(isAdmin ? [{
+      href: "/admin",
+      label: "Admin",
+      active: pathname?.startsWith("/admin"),
+    }] : []),
   ];
 
   return (
