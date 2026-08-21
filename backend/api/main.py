@@ -8,6 +8,9 @@ from contextlib import asynccontextmanager
 from pydantic import BaseModel, EmailStr, Field
 from typing import Optional, List, Dict, Any
 from datetime import datetime
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 import logging
 import os
 import httpx
@@ -32,12 +35,13 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Clerk JWKS URL
+# Rate limiter — IP based
+limiter = Limiter(key_func=get_remote_address)
+
+# Clerk config
 CLERK_PUBLISHABLE_KEY = os.getenv("CLERK_PUBLISHABLE_KEY", "")
 CLERK_JWKS_URL = None
 
-# Extract frontend API URL from publishable key
-# pk_test_ZHluYW1pYy13aWxkY2F0... → dynamic-wildcat-7729.clerk.accounts.dev
 def get_clerk_jwks_url():
     global CLERK_JWKS_URL
     if CLERK_JWKS_URL:
@@ -45,7 +49,6 @@ def get_clerk_jwks_url():
     try:
         import base64
         key = CLERK_PUBLISHABLE_KEY.split("_")[2]
-        # Add padding
         padding = 4 - len(key) % 4
         if padding != 4:
             key += "=" * padding
@@ -57,11 +60,9 @@ def get_clerk_jwks_url():
         logger.error(f"Failed to decode Clerk publishable key: {e}")
         return None
 
-# Cache JWKS keys
 _jwks_cache = {}
 
 async def get_jwks():
-    """Fetch and cache Clerk JWKS."""
     global _jwks_cache
     if _jwks_cache:
         return _jwks_cache
@@ -74,13 +75,10 @@ async def get_jwks():
         return _jwks_cache
 
 async def verify_clerk_token(token: str) -> Dict[str, Any]:
-    """Verify Clerk JWT token and return claims."""
     try:
         jwks = await get_jwks()
-        # Get kid from token header
         header = jwt.get_unverified_header(token)
         kid = header.get("kid")
-        # Find matching key
         public_key = None
         for key in jwks.get("keys", []):
             if key.get("kid") == kid:
@@ -88,7 +86,6 @@ async def verify_clerk_token(token: str) -> Dict[str, Any]:
                 break
         if not public_key:
             raise HTTPException(status_code=401, detail="Invalid token key")
-        # Verify token
         payload = jwt.decode(
             token,
             public_key,
@@ -104,13 +101,11 @@ async def verify_clerk_token(token: str) -> Dict[str, Any]:
         logger.error(f"Token verification failed: {e}")
         raise HTTPException(status_code=401, detail="Authentication failed")
 
-# Security scheme
 security = HTTPBearer()
 
 async def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security)
 ) -> str:
-    """Extract and verify current user from JWT token."""
     token = credentials.credentials
     payload = await verify_clerk_token(token)
     user_id = payload.get("sub")
@@ -118,9 +113,7 @@ async def get_current_user(
         raise HTTPException(status_code=401, detail="Invalid token claims")
     return user_id
 
-# Optional auth — public endpoints ke liye
 async def get_optional_user(request: Request) -> Optional[str]:
-    """Get user if token present, else None."""
     auth_header = request.headers.get("Authorization")
     if not auth_header or not auth_header.startswith("Bearer "):
         return None
@@ -138,7 +131,6 @@ async def lifespan(app: FastAPI):
     try:
         await get_db_pool()
         logger.info("Database connection pool initialized")
-        # Pre-fetch JWKS
         get_clerk_jwks_url()
         yield
     finally:
@@ -153,6 +145,10 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan
 )
+
+# Rate limiter setup
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 app.add_middleware(
     CORSMiddleware,
@@ -173,13 +169,11 @@ class SupportFormSubmission(BaseModel):
     message: str = Field(..., min_length=20, max_length=5000)
     priority: str = Field(default="medium", pattern="^(low|medium|high)$")
 
-
 class SupportFormResponse(BaseModel):
     success: bool
     ticket_id: str
     message: str
     estimated_response_time: str = "Usually within 5 minutes"
-
 
 class TicketStatusResponse(BaseModel):
     ticket_id: str
@@ -191,7 +185,6 @@ class TicketStatusResponse(BaseModel):
     customer_email: str
     messages: List[Dict[str, Any]]
 
-
 class TicketListItem(BaseModel):
     ticket_id: str
     status: str
@@ -201,7 +194,6 @@ class TicketListItem(BaseModel):
     message_count: int
     has_agent_response: bool
 
-
 class CustomerLookupResponse(BaseModel):
     customer_id: str
     email: str
@@ -209,14 +201,12 @@ class CustomerLookupResponse(BaseModel):
     created_at: datetime
     ticket_count: int
 
-
 class HealthCheckResponse(BaseModel):
     status: str
     timestamp: datetime
     version: str
     database: str
     components: Dict[str, str]
-
 
 class MetricsResponse(BaseModel):
     time_period: str
@@ -238,7 +228,8 @@ async def root():
 
 
 @app.get("/health", response_model=HealthCheckResponse, tags=["Health"])
-async def health_check():
+@limiter.limit("60/minute")
+async def health_check(request: Request):
     try:
         pool = await get_db_pool()
         async with pool.acquire() as conn:
@@ -258,12 +249,13 @@ async def health_check():
 
 
 @app.post("/support/submit", response_model=SupportFormResponse, tags=["Support"], status_code=201)
+@limiter.limit("10/minute")
 async def submit_support_form(
+    request: Request,
     submission: SupportFormSubmission,
     background_tasks: BackgroundTasks,
     clerk_user_id: str = Depends(get_current_user)
 ):
-    """Submit support form — requires authentication."""
     try:
         result = await handle_form_submission(
             name=submission.name,
@@ -274,39 +266,32 @@ async def submit_support_form(
             priority=submission.priority,
             clerk_user_id=clerk_user_id
         )
-
         logger.info(f"Form submitted: ticket_id={result['ticket_id']} user={clerk_user_id}")
-
         return SupportFormResponse(
             success=True,
             ticket_id=result["ticket_id"],
             message="Thank you for contacting LexDesk support! Our AI assistant is processing your request.",
             estimated_response_time="Usually within 5 minutes"
         )
-
     except Exception as e:
         logger.error(f"Form submission failed: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Failed to submit support form. Please try again.")
 
 
 @app.get("/support/status/{ticket_id}", response_model=TicketStatusResponse, tags=["Support"])
+@limiter.limit("60/minute")
 async def get_ticket_status(
+    request: Request,
     ticket_id: str,
     clerk_user_id: str = Depends(get_current_user)
 ):
-    """Get ticket status — only owner can access."""
     try:
         ticket = await get_ticket_by_id(ticket_id)
-
         if not ticket:
             raise HTTPException(status_code=404, detail=f"Ticket {ticket_id} not found")
-
-        # User isolation — sirf apna ticket dekh sake
         if ticket.get("clerk_user_id") and ticket["clerk_user_id"] != clerk_user_id:
             raise HTTPException(status_code=403, detail="Access denied")
-
         messages = await get_messages_by_ticket(ticket_id)
-
         return TicketStatusResponse(
             ticket_id=str(ticket["id"]),
             status=ticket["status"],
@@ -325,7 +310,6 @@ async def get_ticket_status(
                 for msg in messages
             ]
         )
-
     except HTTPException:
         raise
     except Exception as e:
@@ -334,10 +318,11 @@ async def get_ticket_status(
 
 
 @app.get("/tickets/my", tags=["Tickets"])
+@limiter.limit("30/minute")
 async def get_my_tickets(
+    request: Request,
     clerk_user_id: str = Depends(get_current_user)
 ):
-    """Get all tickets for current logged-in user."""
     try:
         pool = await get_db_pool()
         async with pool.acquire() as conn:
@@ -357,7 +342,6 @@ async def get_my_tickets(
                 """,
                 clerk_user_id
             )
-
         tickets = [
             {
                 "ticket_id": str(row["id"]),
@@ -371,44 +355,36 @@ async def get_my_tickets(
             }
             for row in rows
         ]
-
         return {"tickets": tickets, "total": len(tickets)}
-
     except Exception as e:
         logger.error(f"Get my tickets failed: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Failed to retrieve tickets")
 
 
 @app.delete("/tickets/{ticket_id}", tags=["Tickets"])
+@limiter.limit("10/minute")
 async def delete_ticket(
+    request: Request,
     ticket_id: str,
     clerk_user_id: str = Depends(get_current_user)
 ):
-    """Soft delete a ticket — only owner can delete."""
     try:
         pool = await get_db_pool()
         async with pool.acquire() as conn:
-            # Ownership check
             ticket = await conn.fetchrow(
                 "SELECT id, clerk_user_id FROM tickets WHERE id = $1",
                 ticket_id
             )
-
             if not ticket:
                 raise HTTPException(status_code=404, detail="Ticket not found")
-
             if ticket["clerk_user_id"] != clerk_user_id:
                 raise HTTPException(status_code=403, detail="Access denied")
-
-            # Soft delete
             await conn.execute(
                 "UPDATE tickets SET deleted_at = NOW() WHERE id = $1",
                 ticket_id
             )
-
         logger.info(f"Ticket {ticket_id} deleted by user {clerk_user_id}")
         return {"success": True, "message": "Ticket deleted successfully"}
-
     except HTTPException:
         raise
     except Exception as e:
@@ -417,32 +393,32 @@ async def delete_ticket(
 
 
 @app.get("/tickets/{ticket_id}", response_model=TicketStatusResponse, tags=["Tickets"])
+@limiter.limit("60/minute")
 async def get_ticket_details(
+    request: Request,
     ticket_id: str,
     clerk_user_id: str = Depends(get_current_user)
 ):
-    """Get ticket details — alias for /support/status/{ticket_id}."""
-    return await get_ticket_status(ticket_id, clerk_user_id)
+    return await get_ticket_status(request, ticket_id, clerk_user_id)
 
 
 @app.get("/customers/lookup", response_model=CustomerLookupResponse, tags=["Customers"])
+@limiter.limit("20/minute")
 async def lookup_customer(
+    request: Request,
     email: EmailStr,
     clerk_user_id: str = Depends(get_current_user)
 ):
     try:
         customer = await get_customer_by_email(email)
-
         if not customer:
-            raise HTTPException(status_code=404, detail=f"Customer not found")
-
+            raise HTTPException(status_code=404, detail="Customer not found")
         pool = await get_db_pool()
         async with pool.acquire() as conn:
             ticket_count = await conn.fetchval(
                 "SELECT COUNT(*) FROM tickets WHERE customer_id = $1 AND deleted_at IS NULL",
                 customer["id"]
             )
-
         return CustomerLookupResponse(
             customer_id=str(customer["id"]),
             email=customer["email"],
@@ -450,7 +426,6 @@ async def lookup_customer(
             created_at=customer["created_at"],
             ticket_count=ticket_count
         )
-
     except HTTPException:
         raise
     except Exception as e:
@@ -459,7 +434,9 @@ async def lookup_customer(
 
 
 @app.get("/metrics/channels", response_model=MetricsResponse, tags=["Metrics"])
+@limiter.limit("20/minute")
 async def get_channel_metrics(
+    request: Request,
     hours: int = 24,
     clerk_user_id: str = Depends(get_current_user)
 ):
@@ -479,7 +456,6 @@ async def get_channel_metrics(
                   AND t.created_at > NOW() - INTERVAL '{hours} hours'
                 """
             )
-
         return MetricsResponse(
             time_period=f"Last {hours} hours",
             channels={
@@ -492,17 +468,16 @@ async def get_channel_metrics(
             total_tickets=total_tickets,
             avg_response_time=float(avg_response_time) if avg_response_time else None
         )
-
     except Exception as e:
         logger.error(f"Get metrics failed: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Failed to retrieve metrics")
 
 
 @app.get("/help/search", tags=["Help"])
-async def search_help(q: str):
-    """Search knowledge base — public endpoint."""
+@limiter.limit("30/minute")
+async def search_help(request: Request, q: str):
     try:
-        from rag.retriever import retrieve, format_results_for_agent
+        from rag.retriever import retrieve
         results = await retrieve(query=q, top_k=5)
         return {
             "query": q,
@@ -526,7 +501,6 @@ async def search_help(q: str):
 @app.exception_handler(404)
 async def not_found_handler(request, exc):
     return JSONResponse(status_code=404, content={"error": "Not Found", "detail": "The requested resource was not found"})
-
 
 @app.exception_handler(500)
 async def internal_error_handler(request, exc):

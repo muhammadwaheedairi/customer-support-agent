@@ -7,6 +7,7 @@ import { MessageSquare, Loader2 } from "lucide-react";
 import { Button } from "./ui/button";
 import { useAuth } from "@clerk/nextjs";
 import { clsx } from "clsx";
+import { toast } from "sonner";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
@@ -85,12 +86,16 @@ export function ConversationsList({ onNewConversation }: ConversationsListProps)
 
       if (response.ok) {
         setTickets((prev) => prev.filter((t) => t.ticket_id !== ticketId));
+        toast.success("Conversation deleted successfully.");
+      } else {
+        toast.error("Failed to delete conversation.");
       }
     } catch (err) {
       console.error("Failed to delete ticket:", err);
+      toast.error("Something went wrong. Please try again.");
     }
   };
-
+  
   const filteredTickets = tickets.filter((ticket) => {
     if (filter === "all") return true;
     return ticket.status === filter;

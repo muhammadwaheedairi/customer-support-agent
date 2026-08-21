@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth, useUser } from "@clerk/nextjs";
 import { clsx } from "clsx";
+import { toast } from "sonner";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
@@ -117,7 +118,6 @@ export function NewConversationModal({ onClose, onSuccess }: NewConversationModa
     setIsSubmitting(true);
 
     try {
-      // Clerk JWT token lo
       const token = await getToken();
 
       if (!token) {
@@ -139,17 +139,18 @@ export function NewConversationModal({ onClose, onSuccess }: NewConversationModa
       }
 
       const data = await response.json();
+      toast.success("Conversation started! AI is processing your request.");
       onSuccess(data.ticket_id);
 
     } catch (error) {
       console.error("Form submission error:", error);
-      setSubmitError(
-        error instanceof Error ? error.message : "Failed to submit form. Please try again."
-      );
+      const message = error instanceof Error ? error.message : "Failed to submit form. Please try again.";
+      toast.error(message);
+      setSubmitError(message);
     } finally {
       setIsSubmitting(false);
     }
-  };
+  }; 
 
   return (
     <div className="fixed inset-0 bg-overlay/50 flex items-center justify-center p-gutter z-50">
