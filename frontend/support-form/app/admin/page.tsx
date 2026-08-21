@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@clerk/nextjs";
 import { AppShell } from "@/components/app-shell";
 import { PageHeader } from "@/components/page-header";
-import { Loader2, AlertCircle, Users, Ticket, TrendingUp, Clock, CheckCircle, AlertTriangle } from "lucide-react";
+import { Loader2, AlertCircle, Users, Ticket, TrendingUp, Clock, CheckCircle, AlertTriangle, Download } from "lucide-react";
 import { clsx } from "clsx";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
@@ -40,6 +40,7 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -55,7 +56,6 @@ export default function AdminPage() {
         return;
       }
 
-      // Fetch stats and tickets in parallel
       const [statsRes, ticketsRes] = await Promise.all([
         fetch(`${API_URL}/admin/stats`, {
           headers: { "Authorization": `Bearer ${token}` },
@@ -82,6 +82,27 @@ export default function AdminPage() {
       console.error("Failed to load admin data:", err);
       setError("Failed to load dashboard");
       setLoading(false);
+    }
+  };
+
+  const handleExport = async () => {
+    try {
+      setExporting(true);
+      const token = await getToken();
+      const response = await fetch(`${API_URL}/admin/export`, {
+        headers: { "Authorization": `Bearer ${token}` },
+      });
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "lexdesk-tickets.csv";
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Export failed:", err);
+    } finally {
+      setExporting(false);
     }
   };
 
@@ -132,12 +153,25 @@ export default function AdminPage() {
       <PageHeader
         title="Admin Dashboard"
         description="Monitor all support conversations and metrics"
+        action={
+          <button
+            onClick={handleExport}
+            disabled={exporting}
+            className="inline-flex items-center gap-sm px-md py-sm bg-primary text-secondary rounded-lg label-md hover:opacity-90 transition-opacity disabled:opacity-50"
+          >
+            {exporting ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Download className="h-4 w-4" />
+            )}
+            Export CSV
+          </button>
+        }
       />
 
       {/* Stats Grid */}
       {stats && (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-md mb-xl">
-          {/* Total Tickets */}
           <div className="border border-border rounded-lg p-md bg-neutral">
             <div className="flex items-center gap-sm mb-sm">
               <Ticket className="h-5 w-5 text-primary" />
@@ -146,7 +180,6 @@ export default function AdminPage() {
             <p className="headline-md text-tertiary">{stats.total_tickets}</p>
           </div>
 
-          {/* Open Tickets */}
           <div className="border border-border rounded-lg p-md bg-neutral">
             <div className="flex items-center gap-sm mb-sm">
               <Clock className="h-5 w-5 text-blue-500" />
@@ -155,7 +188,6 @@ export default function AdminPage() {
             <p className="headline-md text-tertiary">{stats.open_tickets}</p>
           </div>
 
-          {/* Escalated */}
           <div className="border border-border rounded-lg p-md bg-neutral">
             <div className="flex items-center gap-sm mb-sm">
               <AlertTriangle className="h-5 w-5 text-red-500" />
@@ -165,7 +197,6 @@ export default function AdminPage() {
             <p className="body-sm text-muted">{stats.escalation_rate}% rate</p>
           </div>
 
-          {/* Resolved */}
           <div className="border border-border rounded-lg p-md bg-neutral">
             <div className="flex items-center gap-sm mb-sm">
               <CheckCircle className="h-5 w-5 text-green-500" />
@@ -175,7 +206,6 @@ export default function AdminPage() {
             <p className="body-sm text-muted">{stats.resolution_rate}% rate</p>
           </div>
 
-          {/* Customers */}
           <div className="border border-border rounded-lg p-md bg-neutral">
             <div className="flex items-center gap-sm mb-sm">
               <Users className="h-5 w-5 text-primary" />
@@ -184,7 +214,6 @@ export default function AdminPage() {
             <p className="headline-md text-tertiary">{stats.total_customers}</p>
           </div>
 
-          {/* Avg Response */}
           <div className="border border-border rounded-lg p-md bg-neutral">
             <div className="flex items-center gap-sm mb-sm">
               <TrendingUp className="h-5 w-5 text-primary" />
@@ -199,7 +228,6 @@ export default function AdminPage() {
 
       {/* Tickets Table */}
       <div>
-        {/* Filter Tabs */}
         <div className="flex items-center gap-xs border-b border-border mb-md">
           {["all", "open", "escalated", "resolved"].map((s) => (
             <button
@@ -217,7 +245,6 @@ export default function AdminPage() {
           ))}
         </div>
 
-        {/* Table */}
         <div className="border border-border rounded-lg overflow-hidden">
           <table className="w-full">
             <thead className="bg-surface border-b border-border">

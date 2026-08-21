@@ -584,7 +584,73 @@ async def get_admin_stats(
 
     except Exception as e:
         logger.error(f"Get admin stats failed: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail="Failed to retrieve stats")        
+        raise HTTPException(status_code=500, detail="Failed to retrieve stats")
+
+@app.get("/admin/export", tags=["Admin"])
+@limiter.limit("5/minute")
+async def export_tickets_csv(
+    request: Request,
+    clerk_user_id: str = Depends(get_admin_user)
+):
+    """Export all tickets as CSV — admin only."""
+    import csv
+    import io
+    from fastapi.responses import StreamingResponse
+
+    try:
+        pool = await get_db_pool()
+        async with pool.acquire() as conn:
+            rows = await conn.fetch(
+                """
+                SELECT 
+                    t.id, t.subject, t.category, t.status,
+                    t.priority, t.created_at, t.resolved_at,
+                    c.email as customer_email,
+                    c.name as customer_name,
+                    COUNT(m.id) as message_count
+                FROM tickets t
+                JOIN customers c ON t.customer_id = c.id
+                LEFT JOIN messages m ON m.ticket_id = t.id
+                WHERE t.deleted_at IS NULL
+                GROUP BY t.id, t.subject, t.category, t.status,
+                         t.priority, t.created_at, t.resolved_at,
+                         c.email, c.name
+                ORDER BY t.created_at DESC
+                """
+            )
+
+        output = io.StringIO()
+        writer = csv.writer(output)
+        writer.writerow([
+            "Ticket ID", "Subject", "Category", "Status",
+            "Priority", "Customer Name", "Customer Email",
+            "Messages", "Created At", "Resolved At"
+        ])
+
+        for row in rows:
+            writer.writerow([
+                str(row["id"]),
+                row["subject"],
+                row["category"],
+                row["status"],
+                row["priority"],
+                row["customer_name"] or "",
+                row["customer_email"],
+                row["message_count"],
+                row["created_at"].strftime("%Y-%m-%d %H:%M"),
+                row["resolved_at"].strftime("%Y-%m-%d %H:%M") if row["resolved_at"] else "",
+            ])
+
+        output.seek(0)
+        return StreamingResponse(
+            iter([output.getvalue()]),
+            media_type="text/csv",
+            headers={"Content-Disposition": "attachment; filename=lexdesk-tickets.csv"}
+        )
+
+    except Exception as e:
+        logger.error(f"Export failed: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Export failed")               
 
 
 @app.get("/help/search", tags=["Help"])
