@@ -149,13 +149,13 @@ export function ConversationsList({ onNewConversation }: ConversationsListProps)
   return (
     <div>
       {/* Filter Tabs */}
-      <div className="flex items-center gap-xs border-b border-border mb-md">
+      <div className="flex items-center gap-xs border-b border-border mb-md overflow-x-auto scrollbar-hide">
         {filterOptions.map((option) => (
           <button
             key={option.value}
             onClick={() => setFilter(option.value)}
             className={clsx(
-              "px-md py-sm label-md transition-colors border-b-2 -mb-px",
+              "px-sm sm:px-md py-sm label-md transition-colors border-b-2 -mb-px whitespace-nowrap flex-shrink-0",
               filter === option.value
                 ? "border-primary text-tertiary"
                 : "border-transparent text-muted hover:text-tertiary"

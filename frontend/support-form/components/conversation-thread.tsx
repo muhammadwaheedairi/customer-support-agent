@@ -110,8 +110,8 @@ export function ConversationThread({ ticketId }: ConversationThreadProps) {
 
   if (error || !ticketData) {
     return (
-      <div className="border border-error rounded-lg p-lg bg-red-50 text-center">
-        <AlertCircle className="h-12 w-12 text-error mx-auto mb-md" />
+      <div className="border border-error rounded-lg p-md sm:p-lg bg-red-50 text-center">
+        <AlertCircle className="h-10 w-10 sm:h-12 sm:w-12 text-error mx-auto mb-md" />
         <p className="body-lg text-error mb-md">{error || "Conversation not found"}</p>
         <Button variant="primary" onClick={() => window.location.reload()}>
           Try Again
@@ -123,21 +123,21 @@ export function ConversationThread({ ticketId }: ConversationThreadProps) {
   const hasAgentResponse = ticketData.messages.some((msg) => msg.role === "agent");
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-lg">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-md sm:gap-lg">
       {/* Main Thread */}
       <div className="lg:col-span-2">
         <div className="border border-border rounded-lg bg-neutral overflow-hidden">
           {/* Header */}
-          <div className="border-b border-border px-lg py-md">
+          <div className="border-b border-border px-md sm:px-lg py-sm sm:py-md">
             <h1 className="headline-sm text-tertiary mb-xs">{ticketData.subject}</h1>
             <p className="body-sm text-muted">Ticket ID: {ticketData.ticket_id}</p>
           </div>
 
           {/* Processing Indicator */}
           {!hasAgentResponse && (
-            <div className="border-b border-border px-lg py-md bg-surface">
+            <div className="border-b border-border px-md sm:px-lg py-sm sm:py-md bg-surface">
               <div className="flex items-center gap-sm">
-                <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                <Loader2 className="h-5 w-5 animate-spin text-primary flex-shrink-0" />
                 <span className="body-md text-tertiary">
                   AI assistant is analyzing your request...
                 </span>
@@ -146,7 +146,7 @@ export function ConversationThread({ ticketId }: ConversationThreadProps) {
           )}
 
           {/* Messages */}
-          <div className="p-lg space-y-md">
+          <div className="p-md sm:p-lg space-y-md">
             {ticketData.messages.map((message, index) => (
               <MessageBubble
                 key={index}
@@ -159,7 +159,7 @@ export function ConversationThread({ ticketId }: ConversationThreadProps) {
 
           {/* Help Note */}
           {hasAgentResponse && (
-            <div className="border-t border-border px-lg py-md bg-surface">
+            <div className="border-t border-border px-md sm:px-lg py-sm sm:py-md bg-surface">
               <p className="body-sm text-muted">
                 <strong>Need more help?</strong> Start a new conversation or email us at{" "}
                 <a href="mailto:support@lexdesk.io" className="text-tertiary hover:underline">

@@ -21,7 +21,8 @@ export default function ConversationDetailPage() {
           className="text-muted hover:text-tertiary"
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Conversations
+          <span className="hidden sm:inline">Back to Conversations</span>
+          <span className="inline sm:hidden">Back</span>
         </Button>
       </div>
 
