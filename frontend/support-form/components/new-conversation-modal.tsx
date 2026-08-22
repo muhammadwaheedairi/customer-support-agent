@@ -153,10 +153,10 @@ export function NewConversationModal({ onClose, onSuccess }: NewConversationModa
   }; 
 
   return (
-    <div className="fixed inset-0 bg-overlay/50 flex items-center justify-center p-gutter z-50">
+    <div className="fixed inset-0 bg-overlay/50 flex items-center justify-center p-sm sm:p-gutter z-50">
       <div className="bg-neutral rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-border">
         {/* Header */}
-        <div className="sticky top-0 bg-neutral border-b border-border px-lg py-md flex items-center justify-between">
+        <div className="sticky top-0 bg-neutral border-b border-border px-md sm:px-lg py-sm sm:py-md flex items-center justify-between">
           <h2 className="headline-sm text-tertiary">New Conversation</h2>
           <button
             onClick={onClose}
@@ -168,7 +168,7 @@ export function NewConversationModal({ onClose, onSuccess }: NewConversationModa
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="p-lg space-y-md">
+        <form onSubmit={handleSubmit} className="p-md sm:p-lg space-y-md">
           {submitError && (
             <div className="p-md bg-red-50 border border-error rounded-lg text-error body-sm">
               {submitError}
@@ -290,11 +290,11 @@ export function NewConversationModal({ onClose, onSuccess }: NewConversationModa
           </div>
 
           {/* Actions */}
-          <div className="flex gap-sm justify-end pt-md">
-            <Button type="button" variant="secondary" onClick={onClose} disabled={isSubmitting}>
+          <div className="flex flex-col-reverse sm:flex-row gap-sm justify-end pt-md">
+            <Button type="button" variant="secondary" onClick={onClose} disabled={isSubmitting} className="w-full sm:w-auto">
               Cancel
             </Button>
-            <Button type="submit" variant="primary" disabled={isSubmitting}>
+            <Button type="submit" variant="primary" disabled={isSubmitting} className="w-full sm:w-auto">
               {isSubmitting ? (
                 <>
                   <Loader2 className="animate-spin h-5 w-5 mr-2" />

@@ -134,3 +134,39 @@
     text-transform: uppercase;
   }
 }
+
+/* Responsive overrides for large headlines on tablet/mobile */
+@media (max-width: 1024px) {
+  .headline-display {
+    font-size: 40px;
+    line-height: 48px;
+  }
+
+  .headline-lg {
+    font-size: 32px;
+    line-height: 42px;
+  }
+}
+
+@media (max-width: 640px) {
+  .headline-display {
+    font-size: 32px;
+    line-height: 38px;
+    letter-spacing: 0.5px;
+  }
+
+  .headline-lg {
+    font-size: 26px;
+    line-height: 32px;
+  }
+
+  .headline-md {
+    font-size: 22px;
+    line-height: 26px;
+  }
+
+  .headline-sm {
+    font-size: 18px;
+    line-height: 22px;
+  }
+}

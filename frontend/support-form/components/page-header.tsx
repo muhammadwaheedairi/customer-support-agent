@@ -15,14 +15,19 @@ export function PageHeader({
   className,
 }: PageHeaderProps) {
   return (
-    <div className={clsx("flex items-start justify-between mb-lg", className)}>
+    <div
+      className={clsx(
+        "flex flex-col sm:flex-row sm:items-start justify-between gap-sm sm:gap-md mb-md sm:mb-lg",
+        className
+      )}
+    >
       <div>
         <h1 className="headline-md text-tertiary">{title}</h1>
         {description && (
           <p className="body-md text-muted mt-xs">{description}</p>
         )}
       </div>
-      {action && <div>{action}</div>}
+      {action && <div className="w-full sm:w-auto">{action}</div>}
     </div>
   );
 }

@@ -39,10 +39,10 @@ export function ConversationRow({
       {/* Main link area */}
       <Link
         href={`/conversations/${ticketId}`}
-        className="flex-1 block p-md min-w-0"
+        className="flex-1 block p-sm sm:p-md min-w-0"
       >
-        <div className="flex items-start justify-between gap-md">
-          <div className="flex-1 min-w-0">
+        <div className="flex flex-col sm:flex-row items-start sm:justify-between gap-xs sm:gap-md">
+          <div className="flex-1 min-w-0 w-full">
             <div className="flex items-center gap-sm mb-xs">
               <h3 className="label-md text-tertiary truncate">{subject}</h3>
               {hasUnread && (
@@ -56,7 +56,7 @@ export function ConversationRow({
               </p>
             )}
 
-            <div className="flex items-center gap-sm text-muted">
+            <div className="flex items-center gap-sm text-muted flex-wrap">
               <span className="body-sm capitalize">{category}</span>
               <span className="body-sm">•</span>
               <span className="body-sm">{timeAgo}</span>
@@ -77,7 +77,7 @@ export function ConversationRow({
             e.stopPropagation();
             onDelete();
           }}
-          className="p-md text-muted hover:text-error opacity-0 group-hover:opacity-100 transition-all flex-shrink-0"
+          className="p-sm sm:p-md text-muted hover:text-error opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all flex-shrink-0"
           aria-label="Delete conversation"
           title="Delete conversation"
         >

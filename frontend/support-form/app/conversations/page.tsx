@@ -28,8 +28,9 @@ export default function ConversationsPage() {
         description="View and manage your support conversations"
         action={
           <Button variant="primary" size="default" onClick={handleNewConversation}>
-            <Plus className="h-5 w-5 mr-2" />
-            New Conversation
+            <Plus className="h-5 w-5 sm:mr-2" />
+            <span className="hidden sm:inline">New Conversation</span>
+            <span className="inline sm:hidden">New</span>
           </Button>
         }
       />
