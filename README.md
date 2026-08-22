@@ -5,7 +5,7 @@
 ### Enterprise-Grade AI Support System for Legal Technology
 
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
-[![Next.js 15](https://img.shields.io/badge/Next.js-15-black)](https://nextjs.org/)
+[![Next.js 16](https://img.shields.io/badge/Next.js-16-black)](https://nextjs.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688.svg)](https://fastapi.tiangolo.com)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](http://makeapullrequest.com)
@@ -74,20 +74,32 @@ Query → Cohere Embed → Qdrant Vector Search → Cohere Rerank → Top-K Resu
 - **Cohere Rerank v3** for precision retrieval
 - Knowledge base: 500+ product documentation entries
 
+### 🔐 **Authentication & Authorization**
+- **Clerk Authentication**: Secure user authentication with JWT tokens
+- **User Isolation**: Each user can only access their own tickets
+- **Admin Dashboard**: Protected admin-only routes for monitoring
+- **Role-Based Access**: Admin vs regular user permissions
+
 ### 🎨 **Modern Frontend**
 - **Landing Page**: Hero section, product preview, feature grid, and CTA
 - **Conversations Workspace**: Full conversation management with filtering (All, Open, Resolved, Escalated)
+- **Admin Dashboard**: Real-time stats, ticket management, CSV export
+- **Authentication Pages**: Sign-in and sign-up with Clerk
 - **Real-time Ticket Status**: Live polling and updates
-- **Help Center**: Knowledge base browser (placeholder)
+- **Help Center**: Knowledge base browser
 - **Beautiful UI**: Radix UI + Tailwind CSS with custom design system
 - **Responsive Design**: Mobile-first with DM Sans typography
 
 ### 🚀 **Production-Ready Backend**
 - FastAPI with async/await throughout
 - PostgreSQL 16 with pgvector extension
+- **Rate Limiting**: SlowAPI with IP-based limits (10-60 req/min per endpoint)
+- **Email Notifications**: Resend integration for ticket updates
+- **JWT Authentication**: Clerk token verification
 - Connection pooling with asyncpg
 - Structured logging and metrics collection
 - Comprehensive error handling
+- Input sanitization and validation
 
 ### 📊 **Monitoring & Observability**
 - Real-time performance metrics
@@ -105,21 +117,24 @@ Query → Cohere Embed → Qdrant Vector Search → Cohere Rerank → Top-K Resu
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                           USER INTERFACE LAYER                          │
 │  ┌───────────────────────────────────────────────────────────────────┐  │
-│  │  Next.js 15 Frontend (React 19 + TypeScript + Tailwind CSS)      │  │
+│  │  Next.js 16 Frontend (React 19 + TypeScript + Tailwind CSS)      │  │
 │  │  • Landing Page (Hero, Features, CTA)                            │  │
 │  │  • Conversations Workspace (List, Thread, Filters)               │  │
+│  │  • Admin Dashboard (Stats, Tickets, CSV Export)                  │  │
+│  │  • Authentication (Clerk Sign-in/Sign-up)                        │  │
 │  │  • Help Center (Knowledge Base Browser)                          │  │
 │  │  • Support Form • Ticket Status • Real-time Updates              │  │
 │  └───────────────────────────────────────────────────────────────────┘  │
 └───────────────────────────────────┬─────────────────────────────────────┘
-                                    │ HTTPS/REST API
+                                    │ HTTPS/REST API + JWT Auth
 ┌───────────────────────────────────▼─────────────────────────────────────┐
 │                         API GATEWAY LAYER                               │
 │  ┌───────────────────────────────────────────────────────────────────┐  │
 │  │  FastAPI Backend (Python 3.11 + Uvicorn)                         │  │
 │  │  • /support/submit    • /support/status/{id}                     │  │
-│  │  • /customers/lookup  • /metrics/channels                        │  │
-│  │  • CORS Middleware    • Rate Limiting                            │  │
+│  │  • /admin/stats       • /admin/tickets    • /admin/export        │  │
+│  │  • /tickets/my        • /help/search                             │  │
+│  │  • JWT Auth (Clerk)   • Rate Limiting    • Email Notifications   │  │
 │  └───────────────────────────────────────────────────────────────────┘  │
 └────────┬──────────────────────────────────────────────────┬─────────────┘
          │                                                   │
@@ -221,12 +236,15 @@ graph TD
 <td>
 
 **Frontend**
-- Next.js 15
+- Next.js 16
 - React 19
 - TypeScript
 - Tailwind CSS
 - Radix UI
+- Clerk Auth
+- Sonner (Toasts)
 - Zod Validation
+- date-fns
 
 </td>
 <td>
@@ -238,6 +256,9 @@ graph TD
 - Asyncpg
 - Pydantic V2
 - Structlog
+- SlowAPI (Rate Limiting)
+- PyJWT (Auth)
+- Resend (Email)
 
 </td>
 <td>
@@ -295,7 +316,7 @@ customer-support-agent/
 │   │   ├── prompts.py                # System prompt (LexDesk brand)
 │   │   └── formatters.py             # Response formatting
 │   ├── api/                          # FastAPI application
-│   │   └── main.py                   # Routes, middleware, lifespan
+│   │   └── main.py                   # Routes, middleware, auth, rate limiting
 │   ├── channels/                     # Channel handlers
 │   │   └── web_form_handler.py       # Web form processing
 │   ├── database/                     # Database layer
@@ -306,6 +327,8 @@ customer-support-agent/
 │   │   ├── qdrant_store.py           # Qdrant vector operations
 │   │   ├── retriever.py              # RAG orchestration + rerank
 │   │   └── seeder.py                 # Knowledge base seeding
+│   ├── services/                     # External services
+│   │   └── email_service.py          # Resend email notifications
 │   ├── workers/                      # Background workers
 │   │   ├── message_processor.py      # Kafka consumer (future)
 │   │   └── metrics_collector.py      # Performance metrics
@@ -323,14 +346,21 @@ customer-support-agent/
 │   └── requirements.txt              # Pip dependencies
 │
 ├── frontend/support-form/            # Next.js frontend
-│   ├── app/                          # App Router (Next.js 15)
+│   ├── app/                          # App Router (Next.js 16)
 │   │   ├── conversations/            # Conversations workspace
 │   │   │   ├── [id]/                 # Individual conversation thread
 │   │   │   └── page.tsx              # Conversations list page
+│   │   ├── admin/                    # Admin dashboard
+│   │   │   └── page.tsx              # Admin stats, tickets, CSV export
+│   │   ├── sign-in/                  # Clerk sign-in
+│   │   │   └── [[...sign-in]]/page.tsx
+│   │   ├── sign-up/                  # Clerk sign-up
+│   │   │   └── [[...sign-up]]/page.tsx
 │   │   ├── help/                     # Help center
 │   │   │   └── page.tsx              # Knowledge base browser
 │   │   ├── layout.tsx                # Root layout
 │   │   ├── page.tsx                  # Landing page
+│   │   ├── error.tsx                 # Error boundary
 │   │   └── globals.css               # Global styles
 │   ├── components/                   # React components
 │   │   ├── landing/                  # Landing page components
@@ -355,7 +385,13 @@ customer-support-agent/
 │   │   ├── message-bubble.tsx        # Message bubble
 │   │   ├── ticket-metadata.tsx       # Ticket metadata display
 │   │   ├── new-conversation-modal.tsx # New conversation modal
-│   │   └── empty-state.tsx           # Empty state component
+│   │   ├── empty-state.tsx           # Empty state component
+│   │   └── error-boundary.tsx        # Error boundary component
+│   ├── lib/                          # Utilities
+│   │   └── api.ts                    # API helpers with auth
+│   ├── public/                       # Static assets
+│   │   └── screenshots/              # Screenshots for README
+│   ├── proxy.ts                      # Clerk middleware
 │   ├── package.json                  # Node dependencies
 │   ├── tailwind.config.ts            # Tailwind configuration
 │   └── tsconfig.json                 # TypeScript config
@@ -379,10 +415,12 @@ customer-support-agent/
 
 ### Required Services
 
-- OpenAI API account
-- Cohere API account (for embeddings and reranking)
-- Qdrant Cloud account (for vector database)
+- OpenAI API account (GPT-4o access)
+- Cohere API account (embeddings and reranking)
+- Qdrant Cloud account (vector database)
 - PostgreSQL database
+- **Clerk account** (authentication)
+- **Resend account** (email notifications)
 
 ### Option 1: Docker Compose (Recommended)
 
@@ -424,8 +462,12 @@ source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 # Install dependencies
 pip install -r requirements.txt
 
+# IMPORTANT: Install additional dependencies not yet in requirements.txt
+pip install slowapi resend pyjwt cohere qdrant-client
+
 # Set environment variables (create .env file)
 # DATABASE_URL, OPENAI_API_KEY, COHERE_API_KEY, QDRANT_URL, QDRANT_API_KEY
+# CLERK_PUBLISHABLE_KEY, ADMIN_USER_ID, RESEND_API_KEY
 # ENVIRONMENT, LOG_LEVEL
 
 # Initialize database
@@ -510,11 +552,15 @@ Create a `.env` file in the backend directory with the following variables:
 | `COHERE_API_KEY` | Cohere API key | ✅ |
 | `QDRANT_URL` | Qdrant Cloud URL | ✅ |
 | `QDRANT_API_KEY` | Qdrant API key | ✅ |
+| `CLERK_PUBLISHABLE_KEY` | Clerk publishable key for JWT verification | ✅ |
+| `ADMIN_USER_ID` | Clerk user ID for admin access | ✅ |
+| `RESEND_API_KEY` | Resend API key for email notifications | ✅ |
 | `ENVIRONMENT` | `development` or `production` | ✅ |
 | `LOG_LEVEL` | `DEBUG`, `INFO`, `WARNING`, `ERROR` | ❌ |
 | `API_HOST` | API bind host | ❌ |
 | `API_PORT` | API bind port | ❌ |
 | `CORS_ORIGINS` | Allowed CORS origins (comma-separated) | ❌ |
+| `TEST_EMAIL` | Test email for development (overrides real emails) | ❌ |
 
 #### Frontend Configuration
 
@@ -523,6 +569,7 @@ Create a `.env.local` file in the frontend directory:
 | Variable | Description | Required |
 |----------|-------------|----------|
 | `NEXT_PUBLIC_API_URL` | Backend API URL | ✅ |
+| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Clerk publishable key for frontend auth | ✅ |
 
 ---
 
@@ -583,18 +630,23 @@ kubectl get svc -n customer-support
 
 ### Frontend Routes
 
-| Route | Description |
-|-------|-------------|
-| `/` | Landing page with hero, features, and CTA |
-| `/conversations` | Conversations workspace with list view |
-| `/conversations/[id]` | Individual conversation thread |
-| `/help` | Help center and knowledge base browser |
+| Route | Description | Auth Required |
+|-------|-------------|---------------|
+| `/` | Landing page with hero, features, and CTA | No |
+| `/conversations` | Conversations workspace with list view | Yes |
+| `/conversations/[id]` | Individual conversation thread | Yes |
+| `/admin` | Admin dashboard (stats, tickets, CSV export) | Yes (Admin) |
+| `/sign-in` | Clerk sign-in page | No |
+| `/sign-up` | Clerk sign-up page | No |
+| `/help` | Help center and knowledge base browser | No |
 
 ### Backend API Endpoints
 
 #### Support
 
 **POST** `/support/submit` - Submit support form
+- **Rate Limit**: 10/minute
+- **Auth**: Optional (creates tickets for authenticated or anonymous users)
 ```json
 {
   "name": "string",
@@ -607,6 +659,8 @@ kubectl get svc -n customer-support
 ```
 
 **GET** `/support/status/{ticket_id}` - Get ticket status
+- **Rate Limit**: 60/minute
+- **Auth**: Required (user must own the ticket)
 
 **Response:**
 ```json
@@ -620,13 +674,51 @@ kubectl get svc -n customer-support
 }
 ```
 
+#### Tickets
+
+**GET** `/tickets/my` - Get current user's tickets
+- **Auth**: Required
+- **Returns**: List of user's tickets with filtering support
+
+**GET** `/tickets/{ticket_id}` - Get ticket details
+- **Rate Limit**: 60/minute
+- **Auth**: Required (user must own the ticket)
+
+**DELETE** `/tickets/{ticket_id}` - Delete ticket (soft delete)
+- **Rate Limit**: 20/minute
+- **Auth**: Required (user must own the ticket)
+
+#### Admin (Admin Only)
+
+**GET** `/admin/stats` - Get dashboard statistics
+- **Auth**: Required (Admin only)
+- **Returns**: Total tickets, open/escalated/resolved counts, customer count, avg response time, escalation rate
+
+**GET** `/admin/tickets?limit=50` - Get all tickets
+- **Auth**: Required (Admin only)
+- **Returns**: Paginated list of all tickets with customer info
+
+**GET** `/admin/export` - Export all tickets as CSV
+- **Auth**: Required (Admin only)
+- **Returns**: CSV file download
+
+#### Help Center
+
+**GET** `/help/search?q={query}` - Search knowledge base
+- **Rate Limit**: 30/minute
+- **Returns**: Relevant help articles from knowledge base
+
 #### Customers
 
 **GET** `/customers/lookup?email={email}` - Lookup customer by email
+- **Rate Limit**: 20/minute
+- **Auth**: Required
 
 #### Metrics
 
 **GET** `/metrics/channels?hours={hours}` - Performance metrics
+- **Rate Limit**: 60/minute
+- **Returns**: Channel metrics, response times, ticket counts
 
 **Full Documentation:** http://localhost:8000/docs (Interactive Swagger UI)
 
@@ -691,11 +783,15 @@ pytest tests/test_e2e.py
 - **Landing Page** (`/`): Hero section, product preview, feature grid, final CTA
 - **Conversations** (`/conversations`): Full workspace with conversation list, filtering (All/Open/Resolved/Escalated), and status badges
 - **Conversation Thread** (`/conversations/[id]`): Individual conversation view with message history and metadata
-- **Help Center** (`/help`): Knowledge base browser (Phase 5 implementation)
+- **Admin Dashboard** (`/admin`): Real-time stats, all tickets table, CSV export (admin-only)
+- **Authentication** (`/sign-in`, `/sign-up`): Clerk authentication pages
+- **Help Center** (`/help`): Knowledge base browser
 
 ### Backend Documentation
 
 - **Agent System Prompt**: [`backend/agent/prompts.py`](backend/agent/prompts.py)
+- **Agent Tools**: [`backend/agent/tools.py`](backend/agent/tools.py) - 5 function tools
+- **Email Service**: [`backend/services/email_service.py`](backend/services/email_service.py) - Resend integration
 - **Escalation Rules**: [`backend/context/escalation-rules.md`](backend/context/escalation-rules.md)
 - **Product Documentation**: [`backend/context/product-docs.md`](backend/context/product-docs.md)
 - **Brand Voice**: [`backend/context/brand-voice.md`](backend/context/brand-voice.md)
