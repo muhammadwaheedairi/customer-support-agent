@@ -1,22 +1,50 @@
 "use client";
 
-import { Bot, Zap, Shield } from "lucide-react";
+import {
+  Clock,
+  Shield,
+  TrendingUp,
+  Users,
+  MessageSquare,
+  Zap,
+} from "lucide-react";
 
 const features = [
   {
-    icon: Bot,
-    title: "AI Agent with Function Tools",
-    description: "OpenAI Agents SDK with GPT-4o and 5 specialized tools for search, escalation, and response generation.",
+    icon: Clock,
+    title: "24/7 Availability",
+    description:
+      "Your clients get instant answers at 2 AM, on weekends, and during holidays — without you lifting a finger.",
   },
   {
     icon: Zap,
-    title: "Knowledge-Aware Responses",
-    description: "RAG pipeline with Cohere embeddings, Qdrant vector search, and reranking for accurate answers from 500+ docs.",
+    title: "Instant AI Responses",
+    description:
+      "Average response time under 30 seconds. No more clients waiting hours for a simple answer about their case status.",
+  },
+  {
+    icon: TrendingUp,
+    title: "80% Auto-Resolved",
+    description:
+      "Routine inquiries — password resets, intake forms, billing questions — handled automatically without human intervention.",
   },
   {
     icon: Shield,
-    title: "Production Infrastructure",
-    description: "PostgreSQL + pgvector, async operations, connection pooling, and automatic escalation with sentiment analysis.",
+    title: "Smart Escalation",
+    description:
+      "Angry clients, refund requests, and legal threats are instantly routed to your team with full context attached.",
+  },
+  {
+    icon: MessageSquare,
+    title: "Complete Audit Trail",
+    description:
+      "Every conversation is logged, timestamped, and exportable. Stay compliant with ABA ethics rules effortlessly.",
+  },
+  {
+    icon: Users,
+    title: "Client Portal Ready",
+    description:
+      "Clients log in, submit inquiries, and track their ticket status — all from a branded, professional interface.",
   },
 ];
 
@@ -26,28 +54,51 @@ export function FeatureGrid() {
       <div className="mx-auto max-w-6xl px-gutter">
         {/* Section Header */}
         <div className="text-center mb-xl max-w-2xl mx-auto">
-          <h2 className="headline-lg text-tertiary mb-sm">Built for Scale</h2>
+          <p className="label-md text-primary mb-sm uppercase tracking-wider">
+            Why LexDesk
+          </p>
+          <h2 className="headline-lg text-tertiary mb-sm">
+            Everything Your Firm Needs
+          </h2>
           <p className="body-lg text-muted">
-            Enterprise-grade AI customer support with real-time responses and automatic escalation.
+            Built specifically for law firms. No generic chatbot — a support
+            system that understands legal workflows.
           </p>
         </div>
 
-        {/* Feature Grid - 3 columns only */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-xl">
+        {/* Feature Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-md">
           {features.map((feature, index) => {
             const Icon = feature.icon;
             return (
-              <div key={index} className="text-center">
-                <div className="mb-md flex justify-center">
-                  <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-surface border border-border">
-                    <Icon className="h-8 w-8 text-tertiary" />
+              <div
+                key={index}
+                className="border border-border rounded-xl p-lg bg-neutral hover:border-primary/50 hover:bg-surface transition-all group"
+              >
+                <div className="mb-md">
+                  <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-primary/10 group-hover:bg-primary/20 transition-colors">
+                    <Icon className="h-6 w-6 text-primary" />
                   </div>
                 </div>
-                <h3 className="headline-sm text-tertiary mb-sm">{feature.title}</h3>
-                <p className="body-md text-muted">{feature.description}</p>
+                <h3 className="label-lg text-tertiary mb-xs">
+                  {feature.title}
+                </h3>
+                <p className="body-md text-muted leading-relaxed">
+                  {feature.description}
+                </p>
               </div>
             );
           })}
+        </div>
+
+        {/* Bottom CTA */}
+        <div className="mt-xl text-center">
+          <div className="inline-flex items-center gap-sm px-lg py-md border border-border rounded-xl bg-surface">
+            <span className="body-md text-muted">
+              From <strong className="text-tertiary">solo practitioners</strong>{" "}
+              to 50-attorney firms
+            </span>
+          </div>
         </div>
       </div>
     </section>
