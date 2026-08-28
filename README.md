@@ -80,6 +80,13 @@ Query → Cohere Embed → Qdrant Vector Search → Cohere Rerank → Top-K Resu
 - **Admin Dashboard**: Protected admin-only routes for monitoring
 - **Role-Based Access**: Admin vs regular user permissions
 
+### 🛡️ **GDPR Compliance**
+- **Right to Erasure**: One-click PII anonymization via `?permanent=true` flag
+- **Smart Anonymization**: Preserves customer records when multiple tickets exist
+- **Audit Trail**: GDPR erasures tracked with timestamps and flags
+- **Admin Visibility**: Anonymized tickets remain visible for metrics/reporting
+- **Legal Disclaimer**: Automated disclaimer in all AI responses
+
 ### 🎨 **Modern Frontend**
 - **Landing Page**: Hero section, product preview, feature grid, and CTA
 - **Conversations Workspace**: Full conversation management with filtering (All, Open, Resolved, Escalated)

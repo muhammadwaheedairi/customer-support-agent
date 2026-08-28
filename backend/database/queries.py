@@ -135,6 +135,7 @@ async def get_ticket_by_id(ticket_id: str) -> Optional[Dict[str, Any]]:
             SELECT t.id, t.customer_id, t.subject, t.category, t.status,
                    t.priority, t.channel, t.created_at, t.resolved_at,
                    t.clerk_user_id, t.deleted_at,
+                   t.satisfaction_rating, t.satisfaction_comment,
                    c.email as customer_email, c.name as customer_name
             FROM tickets t
             JOIN customers c ON t.customer_id = c.id
@@ -266,26 +267,10 @@ async def get_customer_history(customer_id: str, limit: int = 20) -> List[Dict[s
 
 
 # Knowledge base operations
-
-async def search_knowledge_base(query: str, limit: int = 5) -> List[Dict[str, Any]]:
-    pool = await get_db_pool()
-    async with pool.acquire() as conn:
-        rows = await conn.fetch(
-            """
-            SELECT id, title, content, category,
-                   ts_rank(
-                       to_tsvector('english', title || ' ' || content),
-                       plainto_tsquery('english', $1)
-                   ) as relevance
-            FROM knowledge_base
-            WHERE to_tsvector('english', title || ' ' || content) @@ plainto_tsquery('english', $1)
-            ORDER BY relevance DESC
-            LIMIT $2
-            """,
-            query, limit
-        )
-    return [dict(row) for row in rows]
-
+# NOTE: Semantic search for the agent is handled by rag/retriever.py
+# (Cohere embeddings + Qdrant + Cohere rerank). insert_knowledge_entry
+# below is kept for adding entries; the old plain-Postgres full-text
+# search function was removed as unused dead code.
 
 async def insert_knowledge_entry(
     title: str,
@@ -324,6 +309,9 @@ async def get_metrics_summary(
     hours: int = 24,
     channel: Optional[str] = None
 ) -> Dict[str, Any]:
+    # Validate and clamp hours to prevent SQL injection via INTERVAL string interpolation
+    hours = max(1, min(int(hours), 8760))  # 1 hour to 1 year (8760 hours)
+
     pool = await get_db_pool()
     async with pool.acquire() as conn:
         query = f"""
@@ -342,3 +330,98 @@ async def get_metrics_summary(
             query += " GROUP BY metric_name"
             rows = await conn.fetch(query)
     return {row['metric_name']: dict(row) for row in rows}
+
+
+async def anonymize_ticket_data(
+    ticket_id: str,
+    customer_id: str
+) -> None:
+    """
+    Anonymize PII for GDPR 'right to erasure' compliance.
+
+    Process:
+    1. Anonymize all messages for this ticket
+    2. Anonymize ticket subject
+    3. Set gdpr_anonymized flag and resolution_notes
+    4. If customer has NO other active tickets, anonymize customer record too
+
+    Important: Does NOT set deleted_at — ticket remains visible in admin dashboard
+    with anonymized content. Only regular soft-delete sets deleted_at.
+
+    Args:
+        ticket_id: Ticket to anonymize
+        customer_id: Customer who owns the ticket
+    """
+    pool = await get_db_pool()
+
+    async with pool.acquire() as conn:
+        async with conn.transaction():
+            # Step 1: Anonymize all messages for this ticket
+            await conn.execute(
+                """
+                UPDATE messages
+                SET content = '[content removed per deletion request]',
+                    metadata = jsonb_set(
+                        COALESCE(metadata, '{}'::jsonb),
+                        '{anonymized}',
+                        'true'::jsonb
+                    )
+                WHERE ticket_id = $1
+                """,
+                ticket_id
+            )
+
+            # Step 2: Anonymize ticket subject and mark as GDPR anonymized
+            # Note: Do NOT set deleted_at — ticket should remain visible in admin dashboard
+            await conn.execute(
+                """
+                UPDATE tickets
+                SET subject = '[content removed per deletion request]',
+                    gdpr_anonymized = TRUE,
+                    resolution_notes = COALESCE(resolution_notes || E'\n\n', '') ||
+                                      'GDPR erasure: Data anonymized on ' || NOW()::text
+                WHERE id = $1
+                """,
+                ticket_id
+            )
+
+            # Step 3: Check if customer has any other active (non-deleted) tickets
+            # Active ticket = deleted_at IS NULL (simple, no text matching)
+            other_tickets_count = await conn.fetchval(
+                """
+                SELECT COUNT(*)
+                FROM tickets
+                WHERE customer_id = $1
+                  AND id != $2
+                  AND deleted_at IS NULL
+                """,
+                customer_id,
+                ticket_id
+            )
+
+            # Step 4: If this was the only active ticket, anonymize customer record
+            if other_tickets_count == 0:
+                await conn.execute(
+                    """
+                    UPDATE customers
+                    SET name = '[deleted user]',
+                        email = CONCAT('deleted-', id, '@privacy-request.invalid'),
+                        metadata = jsonb_set(
+                            COALESCE(metadata, '{}'::jsonb),
+                            '{anonymized}',
+                            'true'::jsonb
+                        )
+                    WHERE id = $1
+                    """,
+                    customer_id
+                )
+                logger.info(
+                    f"Customer {customer_id} fully anonymized (no other active tickets)"
+                )
+            else:
+                logger.info(
+                    f"Customer {customer_id} has {other_tickets_count} other tickets, "
+                    f"customer record NOT anonymized"
+                )
+
+    logger.info(f"Ticket {ticket_id} data anonymized for GDPR compliance")

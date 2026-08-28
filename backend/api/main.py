@@ -26,6 +26,7 @@ from database.queries import (
     get_ticket_by_id,
     get_messages_by_ticket,
     get_metrics_summary,
+    anonymize_ticket_data,
 )
 from channels.web_form_handler import handle_form_submission
 
@@ -193,6 +194,8 @@ class TicketStatusResponse(BaseModel):
     resolved_at: Optional[datetime] = None
     customer_email: str
     messages: List[Dict[str, Any]]
+    satisfaction_rating: Optional[int] = None
+    satisfaction_comment: Optional[str] = None
 
 class TicketListItem(BaseModel):
     ticket_id: str
@@ -317,7 +320,9 @@ async def get_ticket_status(
                     "sentiment_score": msg.get("sentiment_score")
                 }
                 for msg in messages
-            ]
+            ],
+            satisfaction_rating=ticket.get("satisfaction_rating"),
+            satisfaction_comment=ticket.get("satisfaction_comment")
         )
     except HTTPException:
         raise
@@ -375,25 +380,64 @@ async def get_my_tickets(
 async def delete_ticket(
     request: Request,
     ticket_id: str,
+    permanent: bool = False,
     clerk_user_id: str = Depends(get_current_user)
 ):
+    """
+    Delete a ticket (soft delete by default, or permanent anonymization for GDPR).
+
+    Args:
+        ticket_id: ID of ticket to delete
+        permanent: If True, anonymize all PII for GDPR 'right to erasure' compliance.
+                  Default False = soft delete only (deleted_at timestamp).
+
+    GDPR Permanent Deletion:
+        - Anonymizes ticket subject and all message content
+        - Keeps ticket record for metrics (ID, timestamps, status, category)
+        - If customer has no other active tickets, anonymizes customer record too
+        - Cannot be undone - use with caution
+    """
     try:
         pool = await get_db_pool()
         async with pool.acquire() as conn:
+            # Get ticket with customer_id for potential customer anonymization
             ticket = await conn.fetchrow(
-                "SELECT id, clerk_user_id FROM tickets WHERE id = $1",
+                "SELECT id, clerk_user_id, customer_id FROM tickets WHERE id = $1",
                 ticket_id
             )
             if not ticket:
                 raise HTTPException(status_code=404, detail="Ticket not found")
             if ticket["clerk_user_id"] != clerk_user_id:
                 raise HTTPException(status_code=403, detail="Access denied")
-            await conn.execute(
-                "UPDATE tickets SET deleted_at = NOW() WHERE id = $1",
-                ticket_id
-            )
-        logger.info(f"Ticket {ticket_id} deleted by user {clerk_user_id}")
-        return {"success": True, "message": "Ticket deleted successfully"}
+
+            if permanent:
+                # GDPR permanent anonymization
+                await anonymize_ticket_data(
+                    ticket_id=ticket_id,
+                    customer_id=ticket["customer_id"]
+                )
+                logger.warning(
+                    f"GDPR ERASURE: Ticket {ticket_id} permanently anonymized by user {clerk_user_id}. "
+                    f"Customer ID: {ticket['customer_id']}"
+                )
+                return {
+                    "success": True,
+                    "message": "Ticket data permanently anonymized per GDPR right to erasure",
+                    "permanent": True
+                }
+            else:
+                # Regular soft delete
+                await conn.execute(
+                    "UPDATE tickets SET deleted_at = NOW() WHERE id = $1",
+                    ticket_id
+                )
+                logger.info(f"Ticket {ticket_id} soft-deleted by user {clerk_user_id}")
+                return {
+                    "success": True,
+                    "message": "Ticket deleted successfully",
+                    "permanent": False
+                }
+
     except HTTPException:
         raise
     except Exception as e:
@@ -450,6 +494,9 @@ async def get_channel_metrics(
     clerk_user_id: str = Depends(get_current_user)
 ):
     try:
+        # Validate and clamp hours to prevent SQL injection via INTERVAL string interpolation
+        hours = max(1, min(int(hours), 8760))  # 1 hour to 1 year (8760 hours)
+
         metrics = await get_metrics_summary(hours=hours)
         pool = await get_db_pool()
         async with pool.acquire() as conn:
@@ -650,7 +697,48 @@ async def export_tickets_csv(
 
     except Exception as e:
         logger.error(f"Export failed: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail="Export failed")               
+        raise HTTPException(status_code=500, detail="Export failed")    
+
+class SatisfactionRating(BaseModel):
+    rating: int = Field(..., ge=1, le=5)
+    comment: Optional[str] = Field(None, max_length=500)
+
+@app.post("/tickets/{ticket_id}/rate", tags=["Tickets"])
+@limiter.limit("5/minute")
+async def rate_ticket(
+    request: Request,
+    ticket_id: str,
+    rating: SatisfactionRating,
+    clerk_user_id: str = Depends(get_current_user)
+):
+    """Rate a ticket — only owner can rate."""
+    try:
+        pool = await get_db_pool()
+        async with pool.acquire() as conn:
+            ticket = await conn.fetchrow(
+                "SELECT id, clerk_user_id FROM tickets WHERE id = $1",
+                ticket_id
+            )
+            if not ticket:
+                raise HTTPException(status_code=404, detail="Ticket not found")
+            if ticket["clerk_user_id"] != clerk_user_id:
+                raise HTTPException(status_code=403, detail="Access denied")
+            await conn.execute(
+                """
+                UPDATE tickets 
+                SET satisfaction_rating = $1, satisfaction_comment = $2
+                WHERE id = $3
+                """,
+                rating.rating,
+                rating.comment,
+                ticket_id
+            )
+        return {"success": True, "message": "Rating submitted successfully"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Rate ticket failed: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Failed to submit rating")                   
 
 
 @app.get("/help/search", tags=["Help"])
@@ -692,6 +780,6 @@ if __name__ == "__main__":
     uvicorn.run(
         "main:app",
         host=os.getenv("API_HOST", "0.0.0.0"),
-        port=int(os.getenv("API_PORT", 8000)),
+        port=int(os.getenv("API_PORT", 8001)),
         reload=os.getenv("ENVIRONMENT", "development") == "development"
     )

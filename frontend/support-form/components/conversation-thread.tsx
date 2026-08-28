@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { MessageBubble } from "./message-bubble";
 import { TicketMetadata } from "./ticket-metadata";
+import { SatisfactionRating } from "./satisfaction-rating";
 import { Loader2, AlertCircle } from "lucide-react";
 import { Button } from "./ui/button";
 import { useAuth } from "@clerk/nextjs";
@@ -25,6 +26,8 @@ interface TicketData {
   resolved_at?: string;
   customer_email: string;
   messages: Message[];
+  satisfaction_rating?: number | null;
+  satisfaction_comment?: string | null;
 }
 
 interface ConversationThreadProps {
@@ -36,7 +39,7 @@ export function ConversationThread({ ticketId }: ConversationThreadProps) {
   const [ticketData, setTicketData] = useState<TicketData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [pollingCount, setPollingCount] = useState(0);
+  const [hasAgentResponse, setHasAgentResponse] = useState(false);
 
   const fetchTicketStatus = useCallback(async (): Promise<boolean> => {
     try {
@@ -50,7 +53,7 @@ export function ConversationThread({ ticketId }: ConversationThreadProps) {
 
       const response = await fetch(`${API_URL}/support/status/${ticketId}`, {
         headers: {
-          "Authorization": `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
         },
       });
 
@@ -68,11 +71,12 @@ export function ConversationThread({ ticketId }: ConversationThreadProps) {
       setTicketData(data);
       setLoading(false);
 
-      const hasAgentResponse = data.messages.some(
+      const hasAgent = data.messages.some(
         (msg: Message) => msg.role === "agent"
       );
 
-      if (hasAgentResponse || pollingCount >= 10) {
+      if (hasAgent) {
+        setHasAgentResponse(true);
         return true;
       }
 
@@ -83,15 +87,17 @@ export function ConversationThread({ ticketId }: ConversationThreadProps) {
       setLoading(false);
       return true;
     }
-  }, [ticketId, pollingCount, getToken]);
+  }, [ticketId, getToken]);
 
   useEffect(() => {
+    let pollCount = 0;
+
     fetchTicketStatus();
 
     const pollInterval = setInterval(async () => {
-      setPollingCount((prev) => prev + 1);
+      pollCount++;
       const shouldStop = await fetchTicketStatus();
-      if (shouldStop) {
+      if (shouldStop || pollCount >= 10) {
         clearInterval(pollInterval);
       }
     }, 3000);
@@ -99,6 +105,7 @@ export function ConversationThread({ ticketId }: ConversationThreadProps) {
     return () => clearInterval(pollInterval);
   }, [fetchTicketStatus]);
 
+  // Loading state
   if (loading && !ticketData) {
     return (
       <div className="flex items-center justify-center py-xl">
@@ -108,11 +115,14 @@ export function ConversationThread({ ticketId }: ConversationThreadProps) {
     );
   }
 
+  // Error state
   if (error || !ticketData) {
     return (
       <div className="border border-error rounded-lg p-md sm:p-lg bg-red-50 text-center">
         <AlertCircle className="h-10 w-10 sm:h-12 sm:w-12 text-error mx-auto mb-md" />
-        <p className="body-lg text-error mb-md">{error || "Conversation not found"}</p>
+        <p className="body-lg text-error mb-md">
+          {error || "Conversation not found"}
+        </p>
         <Button variant="primary" onClick={() => window.location.reload()}>
           Try Again
         </Button>
@@ -120,13 +130,12 @@ export function ConversationThread({ ticketId }: ConversationThreadProps) {
     );
   }
 
-  const hasAgentResponse = ticketData.messages.some((msg) => msg.role === "agent");
-
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-md sm:gap-lg">
       {/* Main Thread */}
       <div className="lg:col-span-2">
         <div className="border border-border rounded-lg bg-neutral overflow-hidden">
+
           {/* Header */}
           <div className="border-b border-border px-md sm:px-lg py-sm sm:py-md">
             <h1 className="headline-sm text-tertiary mb-xs">{ticketData.subject}</h1>
@@ -145,16 +154,18 @@ export function ConversationThread({ ticketId }: ConversationThreadProps) {
             </div>
           )}
 
-          {/* Messages */}
+          {/* Messages — system messages hide karo */}
           <div className="p-md sm:p-lg space-y-md">
-            {ticketData.messages.map((message, index) => (
-              <MessageBubble
-                key={index}
-                role={message.role as "agent" | "customer" | "system"}
-                content={message.content}
-                timestamp={message.created_at}
-              />
-            ))}
+            {ticketData.messages
+              .filter((msg) => msg.role !== "system")
+              .map((message, index) => (
+                <MessageBubble
+                  key={index}
+                  role={message.role as "agent" | "customer"}
+                  content={message.content}
+                  timestamp={message.created_at}
+                />
+              ))}
           </div>
 
           {/* Help Note */}
@@ -169,6 +180,17 @@ export function ConversationThread({ ticketId }: ConversationThreadProps) {
             </div>
           )}
         </div>
+
+        {/* Satisfaction Rating */}
+        {hasAgentResponse && (
+          <div className="mt-md">
+            <SatisfactionRating 
+              ticketId={ticketId} 
+              existingRating={ticketData.satisfaction_rating}
+              existingComment={ticketData.satisfaction_comment}
+            />
+          </div>
+        )}
       </div>
 
       {/* Metadata Sidebar */}

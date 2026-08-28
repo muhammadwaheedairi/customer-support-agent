@@ -13,6 +13,7 @@ from database.queries import (
     create_message,
 )
 from rag.retriever import retrieve, format_results_for_agent
+from .formatters import sanitize_response
 
 logger = logging.getLogger(__name__)
 
@@ -43,11 +44,16 @@ class WebResponseInput(BaseModel):
     response: str = Field(..., description="Response message to send to customer")
 
 
+class ResolveTicketInput(BaseModel):
+    ticket_id: str = Field(..., description="Ticket UUID to resolve")
+    resolution_notes: str = Field(..., description="Brief summary of how the issue was resolved")
+
+
 # Tools
 
 @function_tool
 async def search_knowledge_base(input: KnowledgeSearchInput) -> str:
-    """Search TaskFlow product documentation using semantic search + reranking.
+    """Search LexDesk product documentation using semantic search + reranking.
 
     Use this when the customer asks questions about:
     - Product features ("How do I create tasks?")
@@ -188,10 +194,11 @@ async def send_web_response(input: WebResponseInput) -> str:
     Never respond to the customer without calling this tool.
     """
     try:
+        clean_response = sanitize_response(input.response)
         await create_message(
             ticket_id=input.ticket_id,
             role="agent",
-            content=input.response,
+            content=clean_response,
         )
         logger.info(f"Web response sent for ticket {input.ticket_id}")
         return f"Response successfully sent to customer. Ticket ID: {input.ticket_id}"
@@ -200,6 +207,33 @@ async def send_web_response(input: WebResponseInput) -> str:
         logger.error(f"Send web response failed: {e}")
         return f"Failed to send response: {str(e)}"
 
+@function_tool
+async def resolve_ticket(input: ResolveTicketInput) -> str:
+    """Mark ticket as resolved after successfully answering customer query.
+
+    **Call this AFTER send_web_response** when:
+    - Customer question was fully answered from knowledge base
+    - No escalation was needed
+    - Issue is completely resolved
+
+    DO NOT call if:
+    - Ticket was escalated
+    - Issue could not be resolved
+    - Customer needs more help
+    """
+    try:
+        await update_ticket_status(
+            ticket_id=input.ticket_id,
+            status="resolved",
+            resolution_notes=input.resolution_notes
+        )
+        logger.info(f"Ticket {input.ticket_id} resolved")
+        return f"Ticket {input.ticket_id} marked as resolved."
+
+    except Exception as e:
+        logger.error(f"Resolve ticket failed: {e}")
+        return f"Failed to resolve ticket: {str(e)}"
+
 
 ALL_TOOLS = [
     search_knowledge_base,
@@ -207,4 +241,5 @@ ALL_TOOLS = [
     get_customer_history,
     escalate_to_human,
     send_web_response,
+    resolve_ticket,
 ]

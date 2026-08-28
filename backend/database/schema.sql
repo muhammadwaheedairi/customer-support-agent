@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS customers (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     email VARCHAR(255) UNIQUE NOT NULL,
     name VARCHAR(255),
+    clerk_user_id VARCHAR(255),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     metadata JSONB DEFAULT '{}'::jsonb
 );
@@ -25,9 +26,14 @@ CREATE TABLE IF NOT EXISTS tickets (
     status VARCHAR(50) DEFAULT 'open',
     priority VARCHAR(50) DEFAULT 'medium',
     channel VARCHAR(50) DEFAULT 'web_form',
+    clerk_user_id VARCHAR(255),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     resolved_at TIMESTAMP WITH TIME ZONE,
-    resolution_notes TEXT
+    deleted_at TIMESTAMP WITH TIME ZONE,
+    gdpr_anonymized BOOLEAN DEFAULT FALSE,
+    resolution_notes TEXT,
+    satisfaction_rating INTEGER CHECK (satisfaction_rating >= 1 AND satisfaction_rating <= 5),
+    satisfaction_comment TEXT
 );
 
 -- Messages table
@@ -77,10 +83,13 @@ CREATE TABLE IF NOT EXISTS agent_metrics (
 
 -- Indexes for performance
 CREATE INDEX IF NOT EXISTS idx_customers_email ON customers(email);
+CREATE INDEX IF NOT EXISTS idx_customers_clerk_user_id ON customers(clerk_user_id);
 CREATE INDEX IF NOT EXISTS idx_tickets_customer_id ON tickets(customer_id);
+CREATE INDEX IF NOT EXISTS idx_tickets_clerk_user_id ON tickets(clerk_user_id);
 CREATE INDEX IF NOT EXISTS idx_tickets_status ON tickets(status);
 CREATE INDEX IF NOT EXISTS idx_tickets_channel ON tickets(channel);
 CREATE INDEX IF NOT EXISTS idx_tickets_created_at ON tickets(created_at);
+CREATE INDEX IF NOT EXISTS idx_tickets_deleted_at ON tickets(deleted_at);
 CREATE INDEX IF NOT EXISTS idx_messages_ticket_id ON messages(ticket_id);
 CREATE INDEX IF NOT EXISTS idx_messages_created_at ON messages(created_at);
 CREATE INDEX IF NOT EXISTS idx_conversations_customer_id ON conversations(customer_id);
