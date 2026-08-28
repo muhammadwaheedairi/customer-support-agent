@@ -1,16 +1,27 @@
 """Tests for web form submission endpoint."""
 
 import pytest
-from httpx import AsyncClient
+from httpx import ASGITransport, AsyncClient
 from unittest.mock import patch, AsyncMock
+from fastapi import Depends
 
-from api.main import app
+from api.main import app, get_current_user
+
+
+# Mock authentication dependency
+def mock_get_current_user():
+    """Return a mock user ID for testing."""
+    return "test-user-123"
+
+
+# Override dependency for all tests
+app.dependency_overrides[get_current_user] = mock_get_current_user
 
 
 @pytest.fixture
 async def client():
     """Create test client."""
-    async with AsyncClient(app=app, base_url="http://test") as ac:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
         yield ac
 
 
@@ -30,19 +41,19 @@ async def test_root_endpoint(client):
     response = await client.get("/")
     assert response.status_code == 200
     data = response.json()
-    assert data["service"] == "TaskFlow Customer Support Agent API"
+    assert data["service"] == "LexDesk Customer Support Agent API"
 
 
 @pytest.mark.asyncio
 async def test_submit_form_valid(client):
     """Test valid form submission."""
-    with patch('channels.web_form_handler.handle_form_submission') as mock_handle:
+    with patch('api.main.handle_form_submission') as mock_handle:
         mock_handle.return_value = {
             "ticket_id": "test-ticket-123",
             "customer_id": "test-customer-456",
             "status": "submitted"
         }
-        
+
         response = await client.post("/support/submit", json={
             "name": "Test User",
             "email": "test@example.com",
@@ -51,7 +62,7 @@ async def test_submit_form_valid(client):
             "message": "This is a test message that is long enough to pass validation.",
             "priority": "medium"
         })
-        
+
         assert response.status_code == 201
         data = response.json()
         assert data["success"] is True
@@ -121,9 +132,9 @@ async def test_submit_form_invalid_category(client):
 @pytest.mark.asyncio
 async def test_get_ticket_status_not_found(client):
     """Test getting status for non-existent ticket."""
-    with patch('database.queries.get_ticket_by_id') as mock_get:
+    with patch('api.main.get_ticket_by_id') as mock_get:
         mock_get.return_value = None
-        
+
         response = await client.get("/support/status/nonexistent-id")
         assert response.status_code == 404
 
@@ -131,9 +142,9 @@ async def test_get_ticket_status_not_found(client):
 @pytest.mark.asyncio
 async def test_customer_lookup_not_found(client):
     """Test customer lookup for non-existent customer."""
-    with patch('database.queries.get_customer_by_email') as mock_get:
+    with patch('api.main.get_customer_by_email') as mock_get:
         mock_get.return_value = None
-        
+
         response = await client.get("/customers/lookup?email=nonexistent@example.com")
         assert response.status_code == 404
 
@@ -141,16 +152,25 @@ async def test_customer_lookup_not_found(client):
 @pytest.mark.asyncio
 async def test_metrics_endpoint(client):
     """Test metrics endpoint."""
-    with patch('database.queries.get_metrics_summary') as mock_metrics, \
-         patch('database.queries.get_db_pool') as mock_pool:
-        
+    with patch('api.main.get_metrics_summary') as mock_metrics, \
+         patch('api.main.get_db_pool') as mock_pool:
+
         mock_metrics.return_value = {}
-        
-        # Mock database queries
+
+        # Mock database connection with proper async context manager
         mock_conn = AsyncMock()
         mock_conn.fetchval = AsyncMock(side_effect=[10, 2.5])  # ticket count, avg response time
-        mock_pool.return_value.acquire = AsyncMock(return_value=mock_conn)
-        
+
+        # Create async context manager mock for pool.acquire()
+        from unittest.mock import MagicMock
+        mock_acquire_cm = MagicMock()
+        mock_acquire_cm.__aenter__ = AsyncMock(return_value=mock_conn)
+        mock_acquire_cm.__aexit__ = AsyncMock(return_value=None)
+
+        mock_pool_instance = AsyncMock()
+        mock_pool_instance.acquire = MagicMock(return_value=mock_acquire_cm)
+        mock_pool.return_value = mock_pool_instance
+
         response = await client.get("/metrics/channels")
         assert response.status_code == 200
         data = response.json()

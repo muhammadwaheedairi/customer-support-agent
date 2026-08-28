@@ -12,7 +12,6 @@ from .queries import (
     get_messages_by_ticket,
     create_conversation,
     get_conversation_by_id,
-    search_knowledge_base,
     record_metric,
 )
 
@@ -28,6 +27,5 @@ __all__ = [
     "get_messages_by_ticket",
     "create_conversation",
     "get_conversation_by_id",
-    "search_knowledge_base",
     "record_metric",
 ]

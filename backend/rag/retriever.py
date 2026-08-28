@@ -67,31 +67,57 @@ async def retrieve(
 
     # Step 3: Cohere Rerank — Corrective RAG
     logger.info(f"Reranking {len(candidates)} candidates with Cohere...")
-    client = get_rerank_client()
 
-    documents = [
-        f"{c['title']}\n\n{c['content']}"
-        for c in candidates
-    ]
+    try:
+        client = get_rerank_client()
 
-    rerank_response = await client.rerank(
-        model="rerank-english-v3.0",
-        query=query,
-        documents=documents,
-        top_n=top_k,
-    )
+        documents = [
+            f"{c['title']}\n\n{c['content']}"
+            for c in candidates
+        ]
 
-    # Map reranked results back to original candidates
-    reranked = []
-    for result in rerank_response.results:
-        original = candidates[result.index]
-        reranked.append({
-            **original,
-            "relevance_score": result.relevance_score,
-        })
+        rerank_response = await client.rerank(
+            model="rerank-english-v3.0",
+            query=query,
+            documents=documents,
+            top_n=top_k,
+        )
 
-    logger.info(f"Reranking complete — top {top_k} results selected")
-    return reranked
+        # Map reranked results back to original candidates with bounds checking
+        reranked = []
+        for result in rerank_response.results:
+            # Validate index is within bounds
+            if not (0 <= result.index < len(candidates)):
+                logger.warning(
+                    f"Cohere rerank returned out-of-bounds index {result.index} "
+                    f"(candidates length: {len(candidates)}). Skipping this result."
+                )
+                continue
+
+            original = candidates[result.index]
+            reranked.append({
+                **original,
+                "relevance_score": result.relevance_score,
+            })
+
+        # If reranking produced valid results, return them
+        if reranked:
+            logger.info(f"Reranking complete — {len(reranked)} valid results selected")
+            return reranked
+        else:
+            logger.warning(
+                "Reranking produced no valid results (all indices invalid). "
+                "Falling back to top candidates without reranking."
+            )
+            return candidates[:top_k]
+
+    except Exception as e:
+        logger.error(
+            f"Reranking failed with error: {e}. "
+            f"Falling back to top {top_k} candidates without reranking.",
+            exc_info=True
+        )
+        return candidates[:top_k]
 
 
 def format_results_for_agent(results: List[Dict[str, Any]]) -> str:
