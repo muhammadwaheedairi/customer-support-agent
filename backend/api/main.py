@@ -1,5 +1,6 @@
 """FastAPI application for FlowSync Customer Support Agent."""
 
+import asyncio
 from fastapi import FastAPI, HTTPException, BackgroundTasks, Depends, Request
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -29,6 +30,7 @@ from database.queries import (
     anonymize_ticket_data,
 )
 from channels.web_form_handler import handle_form_submission
+from workers.metrics_collector import MetricsCollector
 
 logging.basicConfig(
     level=os.getenv("LOG_LEVEL", "INFO"),
@@ -138,13 +140,29 @@ async def get_optional_user(request: Request) -> Optional[str]:
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("Starting FlowSync Customer Support Agent API...")
+    metrics_task = None
     try:
         await get_db_pool()
         logger.info("Database connection pool initialized")
         get_clerk_jwks_url()
+
+        # Start metrics collector as background task
+        metrics_collector = MetricsCollector(interval_seconds=300)
+        metrics_task = asyncio.create_task(metrics_collector.start())
+        logger.info("Metrics collector started")
+
         yield
     finally:
         logger.info("Shutting down FlowSync Customer Support Agent API...")
+
+        # Stop metrics collector
+        if metrics_task:
+            metrics_task.cancel()
+            try:
+                await metrics_task
+            except asyncio.CancelledError:
+                logger.info("Metrics collector task cancelled")
+
         await close_db_pool()
         logger.info("Database connection pool closed")
 

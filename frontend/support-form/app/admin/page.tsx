@@ -4,10 +4,10 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@clerk/nextjs";
 import { AppShell } from "@/components/app-shell";
 import { PageHeader } from "@/components/page-header";
-import { Loader2, AlertCircle, Users, Ticket, TrendingUp, Clock, CheckCircle, AlertTriangle, Download } from "lucide-react";
+import { Loader2, AlertCircle, Users, Ticket, TrendingUp, Clock, CheckCircle, AlertTriangle, Download, Activity } from "lucide-react";
 import { clsx } from "clsx";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001";
 
 interface Stats {
   total_tickets: number;
@@ -37,6 +37,7 @@ export default function AdminPage() {
   const { getToken } = useAuth();
   const [stats, setStats] = useState<Stats | null>(null);
   const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [metrics, setMetrics] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -53,20 +54,36 @@ export default function AdminPage() {
 
       if (!token) {
         setError("Authentication required");
+        setLoading(false);
         return;
       }
 
-      const [statsRes, ticketsRes] = await Promise.all([
+      const [statsRes, ticketsRes, metricsRes] = await Promise.all([
         fetch(`${API_URL}/admin/stats`, {
           headers: { "Authorization": `Bearer ${token}` },
         }),
         fetch(`${API_URL}/admin/tickets?limit=50`, {
           headers: { "Authorization": `Bearer ${token}` },
         }),
+        fetch(`${API_URL}/metrics/channels?hours=24`, {
+          headers: { "Authorization": `Bearer ${token}` },
+        }).catch((err) => {
+          console.warn("Metrics fetch failed:", err);
+          return null;
+        }),
       ]);
 
+      // Check for auth errors
       if (statsRes.status === 403 || ticketsRes.status === 403) {
         setError("Admin access required");
+        setLoading(false);
+        return;
+      }
+
+      // Check if stats and tickets requests were successful
+      if (!statsRes.ok || !ticketsRes.ok) {
+        console.error("API error - stats:", statsRes.status, "tickets:", ticketsRes.status);
+        setError("Failed to load dashboard data");
         setLoading(false);
         return;
       }
@@ -76,6 +93,20 @@ export default function AdminPage() {
 
       setStats(statsData);
       setTickets(ticketsData.tickets || []);
+
+      // Handle metrics gracefully - don't fail if metrics endpoint is unavailable
+      if (metricsRes && metricsRes.ok) {
+        try {
+          const metricsData = await metricsRes.json();
+          setMetrics(metricsData);
+        } catch (err) {
+          console.warn("Failed to parse metrics:", err);
+          setMetrics(null);
+        }
+      } else {
+        setMetrics(null);
+      }
+
       setLoading(false);
 
     } catch (err) {
@@ -221,6 +252,40 @@ export default function AdminPage() {
             </div>
             <p className="headline-md text-tertiary">
               {formatSeconds(stats.avg_response_seconds)}
+            </p>
+          </div>
+
+          <div className="border border-border rounded-lg p-md bg-neutral">
+            <div className="flex items-center gap-sm mb-sm">
+              <Activity className="h-5 w-5 text-purple-500" />
+              <span className="label-sm text-muted">Hourly Tickets</span>
+            </div>
+            <p className="headline-md text-tertiary">
+              {(() => {
+                const value = metrics?.channels?.web_form?.metrics?.tickets_created_hourly?.avg_value;
+                if (value != null) {
+                  const num = typeof value === 'number' ? value : parseFloat(value);
+                  return isNaN(num) ? "0" : num.toFixed(1);
+                }
+                return "0";
+              })()}
+            </p>
+          </div>
+
+          <div className="border border-border rounded-lg p-md bg-neutral">
+            <div className="flex items-center gap-sm mb-sm">
+              <TrendingUp className="h-5 w-5 text-green-500" />
+              <span className="label-sm text-muted">Resolution Rate</span>
+            </div>
+            <p className="headline-md text-tertiary">
+              {(() => {
+                const value = metrics?.channels?.web_form?.metrics?.resolution_rate_percent?.avg_value;
+                if (value != null) {
+                  const num = typeof value === 'number' ? value : parseFloat(value);
+                  return isNaN(num) ? "N/A" : num.toFixed(1) + "%";
+                }
+                return "N/A";
+              })()}
             </p>
           </div>
         </div>
