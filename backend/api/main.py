@@ -1,4 +1,4 @@
-"""FastAPI application for LexDesk Customer Support Agent."""
+"""FastAPI application for FlowSync Customer Support Agent."""
 
 from fastapi import FastAPI, HTTPException, BackgroundTasks, Depends, Request
 from fastapi.responses import JSONResponse
@@ -137,21 +137,21 @@ async def get_optional_user(request: Request) -> Optional[str]:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.info("Starting LexDesk Customer Support Agent API...")
+    logger.info("Starting FlowSync Customer Support Agent API...")
     try:
         await get_db_pool()
         logger.info("Database connection pool initialized")
         get_clerk_jwks_url()
         yield
     finally:
-        logger.info("Shutting down LexDesk Customer Support Agent API...")
+        logger.info("Shutting down FlowSync Customer Support Agent API...")
         await close_db_pool()
         logger.info("Database connection pool closed")
 
 
 app = FastAPI(
-    title="LexDesk Customer Support Agent API",
-    description="AI-powered 24/7 customer support system for LexDesk",
+    title="FlowSync Customer Support Agent API",
+    description="AI-powered 24/7 customer support system for FlowSync",
     version="1.0.0",
     lifespan=lifespan
 )
@@ -232,7 +232,7 @@ class MetricsResponse(BaseModel):
 @app.get("/", tags=["Root"])
 async def root():
     return {
-        "service": "LexDesk Customer Support Agent API",
+        "service": "FlowSync Customer Support Agent API",
         "version": "1.0.0",
         "status": "operational",
         "docs": "/docs"
@@ -282,7 +282,7 @@ async def submit_support_form(
         return SupportFormResponse(
             success=True,
             ticket_id=result["ticket_id"],
-            message="Thank you for contacting LexDesk support! Our AI assistant is processing your request.",
+            message="Thank you for contacting FlowSync support! Our AI assistant is processing your request.",
             estimated_response_time="Usually within 5 minutes"
         )
     except Exception as e:
@@ -692,7 +692,7 @@ async def export_tickets_csv(
         return StreamingResponse(
             iter([output.getvalue()]),
             media_type="text/csv",
-            headers={"Content-Disposition": "attachment; filename=lexdesk-tickets.csv"}
+            headers={"Content-Disposition": "attachment; filename=flowsync-tickets.csv"}
         )
 
     except Exception as e:

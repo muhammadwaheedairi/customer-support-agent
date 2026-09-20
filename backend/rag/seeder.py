@@ -128,7 +128,7 @@ async def main():
     """Main seeding function."""
     # Path to product docs
     docs_path = os.path.join(
-        os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
         "context",
         "product-docs.md"
     )

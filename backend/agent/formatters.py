@@ -38,7 +38,7 @@ def format_for_web(
     # Add footer with ticket reference if provided
     if ticket_id:
         response += f"\n\n---\n**Ticket Reference:** {ticket_id}\n"
-        response += "*Need more help? Reply to this ticket or visit our [Help Center](https://help.lexdesk.io).*"
+        response += "*Need more help? Reply to this ticket or visit our [Help Center](https://help.flowsync.io).*"
     
     return response
 
@@ -58,7 +58,7 @@ def format_escalation_message(
     Returns:
         Formatted escalation message for customer
     """
-    return f"""Thank you for contacting LexDesk support.
+    return f"""Thank you for contacting FlowSync support.
 
 I've reviewed your request and determined it requires specialized attention from our team. Your inquiry has been escalated to the appropriate department.
 
@@ -72,7 +72,7 @@ I've reviewed your request and determined it requires specialized attention from
 We appreciate your patience and will ensure your issue receives the attention it deserves.
 
 ---
-*Need immediate assistance? Visit our [Help Center](https://help.lexdesk.io) for self-service options.*"""
+*Need immediate assistance? Visit our [Help Center](https://help.flowsync.io) for self-service options.*"""
 
 
 def format_error_message(
@@ -92,8 +92,8 @@ def format_error_message(
 
 **What you can do:**
 - Try refreshing your browser and submitting again
-- Check our [Status Page](https://status.lexdesk.io) for any ongoing issues
-- Visit our [Help Center](https://help.lexdesk.io) for self-service options"""
+- Check our [Status Page](https://status.flowsync.io) for any ongoing issues
+- Visit our [Help Center](https://help.flowsync.io) for self-service options"""
     
     if include_escalation:
         message += "\n\nA member of our support team will also follow up with you shortly to ensure your issue is resolved."
@@ -117,9 +117,9 @@ def sanitize_response(response: str) -> str:
     response = re.sub(r'sk-[a-zA-Z0-9]{32,}', '[API_KEY_REDACTED]', response)
     response = re.sub(r'Bearer [a-zA-Z0-9\-_\.]+', '[TOKEN_REDACTED]', response)
     
-    # Remove potential email addresses that aren't support@lexdesk.io
+    # Remove potential email addresses that aren't support@flowsync.io
     response = re.sub(
-        r'\b[A-Za-z0-9._%+-]+@(?!lexdesk\.io)[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b',
+        r'\b[A-Za-z0-9._%+-]+@(?!flowsync\.io)[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b',
         '[EMAIL_REDACTED]',
         response
     )

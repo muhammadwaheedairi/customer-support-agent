@@ -173,8 +173,8 @@ export function ConversationThread({ ticketId }: ConversationThreadProps) {
             <div className="border-t border-border px-md sm:px-lg py-sm sm:py-md bg-surface">
               <p className="body-sm text-muted">
                 <strong>Need more help?</strong> Start a new conversation or email us at{" "}
-                <a href="mailto:support@lexdesk.io" className="text-tertiary hover:underline">
-                  support@lexdesk.io
+                <a href="mailto:support@flowsync.io" className="text-tertiary hover:underline">
+                  support@flowsync.io
                 </a>
               </p>
             </div>

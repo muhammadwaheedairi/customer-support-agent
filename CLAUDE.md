@@ -1,10 +1,12 @@
-# LexDesk AI Customer Support Agent
+# FlowSync AI Customer Support Agent
 
 ## Project Overview
 
-AI-powered 24/7 customer support system for **LexDesk** — a law firm management SaaS platform serving 1,200+ US/UK law firms. Built with OpenAI Agents SDK and Corrective RAG pipeline (Cohere embeddings + Qdrant vector DB + Cohere reranking). The agent autonomously handles 80%+ of support inquiries via web form submissions, escalating complex cases to human agents.
+AI-powered 24/7 customer support system for **FlowSync** — a conceptual project management and team collaboration SaaS platform created as a portfolio demonstration project. Built with OpenAI Agents SDK and Corrective RAG pipeline (Cohere embeddings + Qdrant vector DB + Cohere reranking). The agent demonstrates autonomous handling of customer inquiries via web form submissions with intelligent escalation logic.
 
-**Single-tenant architecture:** Each deployment serves one law firm with Clerk-based user authentication and authorization.
+**Purpose:** Portfolio project showcasing production-ready AI application architecture, full-stack development, and modern software engineering practices.
+
+**Single-tenant architecture:** Each deployment serves one company with Clerk-based user authentication and authorization.
 
 ---
 
@@ -62,7 +64,7 @@ customer-support-agent/
 │   ├── services/
 │   │   └── email_service.py        # Resend email notifications (NOT in requirements.txt)
 │   ├── context/                    # Product knowledge & rules
-│   │   ├── product-docs.md         # 500+ entries of LexDesk product docs
+│   │   ├── product-docs.md         # 500+ entries of FlowSync product docs
 │   │   ├── escalation-rules.md     # Detailed escalation triggers & SLAs
 │   │   ├── brand-voice.md          # Tone guidelines
 │   │   ├── company-profile.md      # Company context
@@ -190,14 +192,14 @@ pip install -r requirements.txt
 pip install resend  # Missing from requirements.txt!
 
 # Set up database (PostgreSQL)
-psql -U postgres -d lexdesk_support -f database/schema.sql
+psql -U postgres -d flowsync_support -f database/schema.sql
 
 # Run migrations (manual — see Gotcha #1)
-psql -U postgres -d lexdesk_support -c "ALTER TABLE customers ADD COLUMN clerk_user_id VARCHAR(255);"
-psql -U postgres -d lexdesk_support -c "ALTER TABLE tickets ADD COLUMN clerk_user_id VARCHAR(255);"
-psql -U postgres -d lexdesk_support -c "ALTER TABLE tickets ADD COLUMN deleted_at TIMESTAMP WITH TIME ZONE;"
-psql -U postgres -d lexdesk_support -c "ALTER TABLE tickets ADD COLUMN satisfaction_rating INTEGER;"
-psql -U postgres -d lexdesk_support -c "ALTER TABLE tickets ADD COLUMN satisfaction_comment TEXT;"
+psql -U postgres -d flowsync_support -c "ALTER TABLE customers ADD COLUMN clerk_user_id VARCHAR(255);"
+psql -U postgres -d flowsync_support -c "ALTER TABLE tickets ADD COLUMN clerk_user_id VARCHAR(255);"
+psql -U postgres -d flowsync_support -c "ALTER TABLE tickets ADD COLUMN deleted_at TIMESTAMP WITH TIME ZONE;"
+psql -U postgres -d flowsync_support -c "ALTER TABLE tickets ADD COLUMN satisfaction_rating INTEGER;"
+psql -U postgres -d flowsync_support -c "ALTER TABLE tickets ADD COLUMN satisfaction_comment TEXT;"
 
 # Seed knowledge base into Qdrant
 python -m rag.seeder
@@ -246,7 +248,7 @@ npm run lint
 
 ```bash
 # Database
-DATABASE_URL=postgresql://user:password@localhost:5432/lexdesk_support
+DATABASE_URL=postgresql://user:password@localhost:5432/flowsync_support
 
 # OpenAI
 OPENAI_API_KEY=sk-...
@@ -358,7 +360,7 @@ See `design.md` for detailed architecture notes.
 **Key patterns:**
 - **Corrective RAG:** Embed → Vector Search (top 10) → Rerank (top 3) for high precision
 - **Async-first:** All database & API calls use async/await
-- **Single-tenant:** Each deployment = one law firm (no multi-tenancy)
+- **Single-tenant:** Each deployment = one company (no multi-tenancy)
 - **Escalation-driven:** Agent escalates ~20% of tickets to humans
 - **Stateless agent:** No conversation memory beyond database — each run is fresh
 

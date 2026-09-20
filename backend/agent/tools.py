@@ -53,7 +53,7 @@ class ResolveTicketInput(BaseModel):
 
 @function_tool
 async def search_knowledge_base(input: KnowledgeSearchInput) -> str:
-    """Search LexDesk product documentation using semantic search + reranking.
+    """Search FlowSync product documentation using semantic search + reranking.
 
     Use this when the customer asks questions about:
     - Product features ("How do I create tasks?")

@@ -50,7 +50,7 @@ export function MessageBubble({ role, content, timestamp }: MessageBubbleProps) 
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-sm mb-xs flex-wrap">
           <span className="label-md text-tertiary">
-            {isAgent ? "LexDesk AI Assistant" : "You"}
+            {isAgent ? "FlowSync AI Assistant" : "You"}
           </span>
           <span className="body-sm text-muted">{timeAgo}</span>
         </div>

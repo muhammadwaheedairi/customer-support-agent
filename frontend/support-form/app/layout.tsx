@@ -11,8 +11,8 @@ const dmSans = DM_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "LexDesk Support",
-  description: "AI-powered customer support for LexDesk",
+  title: "FlowSync Support",
+  description: "AI-powered customer support for FlowSync",
 };
 
 export default function RootLayout({

@@ -1,8 +1,8 @@
 <div align="center">
 
-# 🤖 LexDesk AI Customer Support Agent
+# 🤖 FlowSync AI Customer Support Agent
 
-### Enterprise-Grade AI Support System for Legal Technology
+### Enterprise-Grade AI Support System for Project Management SaaS
 
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![Next.js 16](https://img.shields.io/badge/Next.js-16-black)](https://nextjs.org/)
@@ -10,7 +10,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](http://makeapullrequest.com)
 
-**24/7 AI-powered customer support system that resolves 80%+ of inquiries autonomously using OpenAI Agents SDK, Corrective RAG, and production-ready infrastructure.**
+**24/7 AI-powered customer support system demonstrating autonomous inquiry handling using OpenAI Agents SDK, Corrective RAG, and production-ready infrastructure.**
 
 [Features](#-key-features) • [Architecture](#-architecture) • [Quick Start](#-quick-start) • [Deployment](#-deployment) • [Documentation](#-documentation)
 
@@ -35,21 +35,29 @@
 
 ## 🎯 Overview
 
-**LexDesk AI Customer Support Agent** is a production-ready intelligent support system built for **LexDesk** — an AI-powered law firm management platform serving 1,200+ law firms across US and UK markets. The system autonomously handles customer inquiries via web forms using advanced RAG (Retrieval-Augmented Generation) with Cohere reranking, OpenAI Agents SDK, and event-driven architecture.
+**FlowSync AI Customer Support Agent** is a production-ready intelligent support system designed as a portfolio demonstration project for **FlowSync** — a conceptual project management and team collaboration platform. The system demonstrates how AI can autonomously handle customer inquiries via web forms using advanced RAG (Retrieval-Augmented Generation) with Cohere reranking, OpenAI Agents SDK, and event-driven architecture.
 
-### Why This Matters
+### Project Purpose
 
-- **Cost Efficiency**: Reduces support costs by 99% ($650/year vs $75K/year human FTE)
-- **24/7 Availability**: Instant responses regardless of time zone or business hours
-- **Consistency**: Professional, brand-aligned responses every time
-- **Scalability**: Handles 1000+ concurrent users with horizontal scaling
-- **Intelligence**: Corrective RAG pipeline ensures accurate, contextual responses
+This is a **portfolio project** showcasing:
+- Full-stack AI application development
+- Production-ready architecture and best practices
+- Integration of modern AI technologies (OpenAI, Cohere, Qdrant)
+- Real-world software engineering patterns
+
+### Technical Highlights
+
+- **Scalable Architecture**: Designed to handle high concurrency with async Python and horizontal scaling
+- **24/7 Availability**: AI agent provides instant responses regardless of time zone
+- **Intelligent Routing**: Automatic escalation logic for complex cases requiring human attention
+- **Cost-Effective**: AI-first approach significantly reduces operational overhead
+- **Advanced RAG**: Corrective RAG pipeline ensures accurate, contextual responses
 
 ### 🎨 Hero Section Preview
 
 <div align="center">
 
-![LexDesk Hero Section](./frontend/support-form/public/screenshots/hero-section.jpg)
+![FlowSync Hero Section](./frontend/support-form/public/screenshots/hero-section.jpg)
 
 *Landing page hero section showcasing the AI-powered customer support workspace*
 
@@ -320,7 +328,7 @@ customer-support-agent/
 │   ├── agent/                        # AI Agent implementation
 │   │   ├── customer_success_agent.py # OpenAI Agents SDK setup
 │   │   ├── tools.py                  # 5 function tools
-│   │   ├── prompts.py                # System prompt (LexDesk brand)
+│   │   ├── prompts.py                # System prompt (FlowSync brand)
 │   │   └── formatters.py             # Response formatting
 │   ├── api/                          # FastAPI application
 │   │   └── main.py                   # Routes, middleware, auth, rate limiting
@@ -340,10 +348,10 @@ customer-support-agent/
 │   │   ├── message_processor.py      # Kafka consumer (future)
 │   │   └── metrics_collector.py      # Performance metrics
 │   ├── context/                      # AI agent context files
-│   │   ├── brand-voice.md            # LexDesk communication style
+│   │   ├── brand-voice.md            # FlowSync communication style
 │   │   ├── company-profile.md        # Company info + pricing
 │   │   ├── escalation-rules.md       # When to escalate to human
-│   │   ├── product-docs.md           # LexDesk feature documentation
+│   │   ├── product-docs.md           # FlowSync feature documentation
 │   │   └── sample-tickets.json       # Example interactions
 │   ├── tests/                        # Test suite
 │   │   ├── test_agent.py             # Agent unit tests
@@ -731,33 +739,27 @@ kubectl get svc -n customer-support
 
 ---
 
-## 📊 Performance
+## 📊 Technical Performance
 
-### Benchmarks (Local Testing)
+### Local Testing Metrics
 
-| Metric | Value | Target |
-|--------|-------|--------|
-| Form submission | < 100ms | < 200ms |
-| Agent processing | 2-4s | < 5s |
-| Total response time | < 5s | < 10s |
-| Database queries | < 50ms | < 100ms |
-| API P95 latency | < 200ms | < 500ms |
-| Concurrent users | 1000+ | 500+ |
-| Uptime | 99.9%+ | 99.9% |
-| Escalation rate | < 20% | < 20% |
+| Metric | Measured Value |
+|--------|---------------|
+| Form submission | < 100ms |
+| Agent processing | 2-4s |
+| Total response time | < 5s |
+| Database queries | < 50ms |
+| RAG retrieval | 1-2s |
+| Escalation rate | ~20% (based on escalation rules) |
 
-### Cost Analysis
+### Technology Stack Capabilities
 
-**Annual Operating Cost: ~$650-1,050**
+- **Async Architecture**: Built with FastAPI and asyncio for efficient concurrent request handling
+- **Vector Search**: Qdrant Cloud vector database with 1024-dim embeddings
+- **Smart Reranking**: Cohere rerank-v3 for precision retrieval
+- **Production Patterns**: Connection pooling, rate limiting, error handling, GDPR compliance
 
-- OpenAI API (GPT-4o): $300-500/year
-- Cohere API (Embed + Rerank): $100-200/year
-- Qdrant Cloud: $100-150/year
-- Cloud hosting (AWS/GCP): $150-200/year
-
-**vs. Human FTE: $75,000/year**
-
-**ROI: 99% cost reduction** 🎉
+**Note:** This is a portfolio demonstration project. Performance metrics are from local development testing.
 
 ---
 
@@ -836,17 +838,18 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📧 Contact & Support
 
-- **Email**: support@lexdesk.io
-- **Documentation**: [docs.lexdesk.io](https://docs.lexdesk.io)
-- **Issues**: [GitHub Issues](https://github.com/yourusername/customer-support-agent/issues)
+- **Portfolio Project by:** Muhammad Waheed
+- **GitHub Issues:** [Report bugs or request features](https://github.com/yourusername/customer-support-agent/issues)
+
+**Note:** FlowSync is a conceptual company created for this portfolio demonstration. Email addresses (support@flowsync.io) and documentation links (docs.flowsync.io) are for demonstration purposes only.
 
 ---
 
 <div align="center">
 
-**Built with ❤️ for LexDesk**
+**Built with ❤️ as a Portfolio Project**
 
-*Demonstrating enterprise-level AI automation at 1% the cost of traditional support*
+*Demonstrating production-ready AI application development and modern software engineering practices*
 
 [![Built with FastAPI](https://img.shields.io/badge/Built%20with-FastAPI-009688.svg)](https://fastapi.tiangolo.com)
 [![Powered by OpenAI](https://img.shields.io/badge/Powered%20by-OpenAI-412991.svg)](https://openai.com)

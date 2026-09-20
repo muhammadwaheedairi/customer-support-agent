@@ -14,37 +14,37 @@ const features = [
     icon: Clock,
     title: "24/7 Availability",
     description:
-      "Your clients get instant answers at 2 AM, on weekends, and during holidays — without you lifting a finger.",
+      "Your customers get instant answers at 2 AM, on weekends, and during holidays — without you lifting a finger.",
   },
   {
     icon: Zap,
     title: "Instant AI Responses",
     description:
-      "Average response time under 30 seconds. No more clients waiting hours for a simple answer about their case status.",
+      "Average response time under 30 seconds. No more customers waiting hours for a simple answer about their project or task.",
   },
   {
     icon: TrendingUp,
     title: "80% Auto-Resolved",
     description:
-      "Routine inquiries — password resets, intake forms, billing questions — handled automatically without human intervention.",
+      "Routine inquiries — password resets, integration setup, subscription questions — handled automatically without human intervention.",
   },
   {
     icon: Shield,
     title: "Smart Escalation",
     description:
-      "Angry clients, refund requests, and legal threats are instantly routed to your team with full context attached.",
+      "Frustrated customers, refund requests, and critical issues are instantly routed to your team with full context attached.",
   },
   {
     icon: MessageSquare,
     title: "Complete Audit Trail",
     description:
-      "Every conversation is logged, timestamped, and exportable. Stay compliant with ABA ethics rules effortlessly.",
+      "Every conversation is logged, timestamped, and exportable. Stay compliant with SOC 2 and GDPR requirements effortlessly.",
   },
   {
     icon: Users,
-    title: "Client Portal Ready",
+    title: "Customer Portal Ready",
     description:
-      "Clients log in, submit inquiries, and track their ticket status — all from a branded, professional interface.",
+      "Customers log in, submit inquiries, and track their ticket status — all from a branded, professional interface.",
   },
 ];
 
@@ -55,14 +55,14 @@ export function FeatureGrid() {
         {/* Section Header */}
         <div className="text-center mb-xl max-w-2xl mx-auto">
           <p className="label-md text-primary mb-sm uppercase tracking-wider">
-            Why LexDesk
+            Why FlowSync
           </p>
           <h2 className="headline-lg text-tertiary mb-sm">
-            Everything Your Firm Needs
+            Everything Your Team Needs
           </h2>
           <p className="body-lg text-muted">
-            Built specifically for law firms. No generic chatbot — a support
-            system that understands legal workflows.
+            Built specifically for software teams and agencies. No generic chatbot — a support
+            system that understands project management workflows.
           </p>
         </div>
 
@@ -95,8 +95,8 @@ export function FeatureGrid() {
         <div className="mt-xl text-center">
           <div className="inline-flex items-center gap-sm px-lg py-md border border-border rounded-xl bg-surface">
             <span className="body-md text-muted">
-              From <strong className="text-tertiary">solo practitioners</strong>{" "}
-              to 50-attorney firms
+              From <strong className="text-tertiary">5-person startups</strong>{" "}
+              to 500+ enterprise teams
             </span>
           </div>
         </div>
