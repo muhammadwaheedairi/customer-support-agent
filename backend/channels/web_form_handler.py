@@ -154,7 +154,7 @@ async def handle_form_submission(
             # Send fallback email to customer
             try:
                 fallback_message = (
-                    "Thank you for contacting LexDesk Support.\n\n"
+                    "Thank you for contacting FlowSync Support.\n\n"
                     "We've received your request and our team is currently reviewing it. "
                     "A support specialist will get back to you shortly with a detailed response.\n\n"
                     "We appreciate your patience."

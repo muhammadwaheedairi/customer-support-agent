@@ -23,7 +23,7 @@ export function Hero() {
         {/* Headline */}
         <h1 className="text-center mb-lg">
           <span className="block text-[56px] lg:text-[80px] font-bold leading-[1.05] text-tertiary tracking-tight">
-            Stop Losing Clients
+            Stop Losing Customers
           </span>
           <span className="block text-[56px] lg:text-[80px] font-bold leading-[1.05] tracking-tight">
             to{" "}
@@ -36,7 +36,7 @@ export function Hero() {
 
         {/* Subheadline */}
         <p className="text-center text-[18px] lg:text-[22px] leading-[1.6] text-muted mb-xl max-w-2xl mx-auto">
-          LexDesk gives your law firm a 24/7 AI support agent that resolves client inquiries instantly — no hiring, no waiting, no missed leads.
+          FlowSync gives your software team a 24/7 AI support agent that resolves customer inquiries instantly — no hiring, no waiting, no missed opportunities.
         </p>
 
         {/* CTA Buttons */}

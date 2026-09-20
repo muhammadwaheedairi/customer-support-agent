@@ -39,10 +39,10 @@ export function TopNav() {
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 group shrink-0">
             <div className="relative h-8 w-8 rounded-lg bg-primary flex items-center justify-center transition-transform group-hover:scale-105">
-              <span className="text-[18px] font-bold text-secondary">L</span>
+              <span className="text-[18px] font-bold text-secondary">F</span>
             </div>
             <span className="text-[16px] sm:text-[20px] font-semibold text-tertiary tracking-tight">
-              LexDesk
+              FlowSync
             </span>
           </Link>
 

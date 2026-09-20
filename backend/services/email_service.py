@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 resend.api_key = os.getenv("RESEND_API_KEY")
 
-FROM_EMAIL = "LexDesk Support <onboarding@resend.dev>"
+FROM_EMAIL = "FlowSync Support <onboarding@resend.dev>"
 
 async def send_ticket_created_email(
     to_email: str,
@@ -23,7 +23,7 @@ async def send_ticket_created_email(
         params = {
             "from": FROM_EMAIL,
             "to": [os.getenv("TEST_EMAIL", to_email)],
-            "subject": f"[LexDesk] Your support request has been received — {subject}",
+            "subject": f"[FlowSync] Your support request has been received — {subject}",
             "html": f"""
 <!DOCTYPE html>
 <html>
@@ -37,7 +37,7 @@ async def send_ticket_created_email(
   <div style="margin-bottom: 32px;">
     <div style="display: inline-flex; align-items: center; gap: 8px; margin-bottom: 24px;">
       <div style="background: #c8f135; width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 18px; color: #1a1a1a;">L</div>
-      <span style="font-size: 20px; font-weight: 600; color: #1a1a1a;">LexDesk</span>
+      <span style="font-size: 20px; font-weight: 600; color: #1a1a1a;">FlowSync</span>
     </div>
     <h1 style="font-size: 24px; font-weight: 600; margin: 0 0 8px 0; color: #1a1a1a;">We received your request</h1>
     <p style="font-size: 16px; color: #666; margin: 0;">Our AI assistant is processing your inquiry now.</p>
@@ -74,9 +74,9 @@ async def send_ticket_created_email(
 
   <!-- Footer -->
   <div style="border-top: 1px solid #e5e5e5; padding-top: 24px; text-align: center;">
-    <p style="font-size: 13px; color: #999; margin: 0 0 4px 0;">LexDesk Support Team</p>
+    <p style="font-size: 13px; color: #999; margin: 0 0 4px 0;">FlowSync Support Team</p>
     <p style="font-size: 13px; color: #999; margin: 0;">
-      <a href="mailto:support@lexdesk.io" style="color: #666; text-decoration: none;">support@lexdesk.io</a>
+      <a href="mailto:support@flowsync.io" style="color: #666; text-decoration: none;">support@flowsync.io</a>
     </p>
   </div>
 
@@ -109,7 +109,7 @@ async def send_agent_response_email(
         params = {
             "from": FROM_EMAIL,
             "to": [os.getenv("TEST_EMAIL", to_email)],
-            "subject": f"[LexDesk] Response to your request — {subject}",
+            "subject": f"[FlowSync] Response to your request — {subject}",
             "html": f"""
 <!DOCTYPE html>
 <html>
@@ -123,7 +123,7 @@ async def send_agent_response_email(
   <div style="margin-bottom: 32px;">
     <div style="display: inline-flex; align-items: center; gap: 8px; margin-bottom: 24px;">
       <div style="background: #c8f135; width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 18px; color: #1a1a1a;">L</div>
-      <span style="font-size: 20px; font-weight: 600; color: #1a1a1a;">LexDesk</span>
+      <span style="font-size: 20px; font-weight: 600; color: #1a1a1a;">FlowSync</span>
     </div>
     <h1 style="font-size: 24px; font-weight: 600; margin: 0 0 8px 0; color: #1a1a1a;">We have a response for you</h1>
     <p style="font-size: 16px; color: #666; margin: 0;">Our AI assistant has processed your request.</p>
@@ -134,7 +134,7 @@ async def send_agent_response_email(
 
   <!-- Response -->
   <div style="background: #f0fdf4; border-left: 4px solid #c8f135; border-radius: 0 8px 8px 0; padding: 20px; margin-bottom: 24px;">
-    <p style="font-size: 13px; font-weight: 600; color: #666; margin: 0 0 12px 0; text-transform: uppercase; letter-spacing: 0.05em;">LexDesk AI Assistant</p>
+    <p style="font-size: 13px; font-weight: 600; color: #666; margin: 0 0 12px 0; text-transform: uppercase; letter-spacing: 0.05em;">FlowSync AI Assistant</p>
     <p style="font-size: 15px; color: #1a1a1a; margin: 0; line-height: 1.6; white-space: pre-wrap;">{response_preview}</p>
   </div>
 
@@ -154,9 +154,9 @@ async def send_agent_response_email(
 
   <!-- Footer -->
   <div style="border-top: 1px solid #e5e5e5; padding-top: 24px; text-align: center;">
-    <p style="font-size: 13px; color: #999; margin: 0 0 4px 0;">LexDesk Support Team</p>
+    <p style="font-size: 13px; color: #999; margin: 0 0 4px 0;">FlowSync Support Team</p>
     <p style="font-size: 13px; color: #999; margin: 0;">
-      <a href="mailto:support@lexdesk.io" style="color: #666; text-decoration: none;">support@lexdesk.io</a>
+      <a href="mailto:support@flowsync.io" style="color: #666; text-decoration: none;">support@flowsync.io</a>
     </p>
   </div>
 
@@ -186,7 +186,7 @@ async def send_escalation_email(
         params = {
             "from": FROM_EMAIL,
             "to": [os.getenv("TEST_EMAIL", to_email)],
-            "subject": f"[LexDesk] Your request has been escalated — {subject}",
+            "subject": f"[FlowSync] Your request has been escalated — {subject}",
             "html": f"""
 <!DOCTYPE html>
 <html>
@@ -197,8 +197,8 @@ async def send_escalation_email(
 
   <div style="margin-bottom: 32px;">
     <div style="display: inline-flex; align-items: center; gap: 8px; margin-bottom: 24px;">
-      <div style="background: #c8f135; width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 18px;">L</div>
-      <span style="font-size: 20px; font-weight: 600;">LexDesk</span>
+      <div style="background: #c8f135; width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 18px;">F</div>
+      <span style="font-size: 20px; font-weight: 600;">FlowSync</span>
     </div>
     <h1 style="font-size: 24px; font-weight: 600; margin: 0 0 8px 0;">Your request needs human attention</h1>
     <p style="font-size: 16px; color: #666; margin: 0;">A specialist will contact you shortly.</p>
@@ -221,7 +221,7 @@ async def send_escalation_email(
 
   <div style="border-top: 1px solid #e5e5e5; padding-top: 24px; text-align: center;">
     <p style="font-size: 13px; color: #999; margin: 0;">
-      <a href="mailto:support@lexdesk.io" style="color: #666; text-decoration: none;">support@lexdesk.io</a>
+      <a href="mailto:support@flowsync.io" style="color: #666; text-decoration: none;">support@flowsync.io</a>
     </p>
   </div>
 

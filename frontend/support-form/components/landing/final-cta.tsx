@@ -24,11 +24,11 @@ export function FinalCTA() {
         <h2 className="text-[44px] lg:text-[60px] font-bold leading-[1.1] text-tertiary tracking-tight mb-md">
           Ready to Automate
           <br />
-          Your Client Support?
+          Your Customer Support?
         </h2>
 
         <p className="body-lg text-muted mb-xl max-w-xl mx-auto">
-          Join hundreds of law firms that have cut support costs by 99% while improving client response times.
+          Join hundreds of software teams that have cut support costs by 99% while improving customer response times.
         </p>
 
         {/* CTAs */}

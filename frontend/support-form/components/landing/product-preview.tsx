@@ -14,7 +14,7 @@ export function ProductPreview() {
           </p>
           <h2 className="headline-lg text-tertiary mb-sm">See It In Action</h2>
           <p className="body-lg text-muted">
-            Real AI responses. Real law firm workflows. Zero wait time.
+            Real AI responses. Real project management workflows. Zero wait time.
           </p>
         </div>
 
@@ -31,7 +31,7 @@ export function ProductPreview() {
               </div>
               <div className="flex-1 mx-sm">
                 <div className="bg-neutral border border-border rounded px-sm py-xs body-sm text-muted text-center">
-                  lexdesk.io/conversations
+                  flowsync.io/conversations
                 </div>
               </div>
             </div>
@@ -41,10 +41,10 @@ export function ProductPreview() {
               <div className="flex items-center gap-xs">
                 <div className="h-6 w-6 rounded bg-primary flex items-center justify-center">
                   <span className="text-[12px] font-bold text-secondary">
-                    L
+                    F
                   </span>
                 </div>
-                <span className="label-md text-tertiary">LexDesk</span>
+                <span className="label-md text-tertiary">FlowSync</span>
               </div>
               <div className="flex items-center gap-md">
                 <span className="body-sm text-tertiary border-b border-primary pb-xs">
@@ -71,7 +71,7 @@ export function ProductPreview() {
                     <div className="flex items-center gap-xs">
                       <div className="h-1.5 w-1.5 rounded-full bg-primary flex-shrink-0 mt-1" />
                       <span className="label-sm text-tertiary text-[13px]">
-                        How do I set up client intake forms?
+                        How do I set up GitHub integration?
                       </span>
                     </div>
                     <span className="px-xs py-[2px] bg-blue-100 text-blue-700 rounded-full text-[11px] font-medium flex-shrink-0">
@@ -117,13 +117,13 @@ export function ProductPreview() {
               {/* AI Response Preview */}
               <div className="mt-md border border-border rounded-lg p-sm bg-surface">
                 <p className="label-sm text-muted text-[11px] mb-xs">
-                  LexDesk AI Assistant • 26s ago
+                  FlowSync AI Assistant • 26s ago
                 </p>
                 <p className="body-sm text-tertiary text-[13px] leading-relaxed">
-                  To set up client intake forms, go to{" "}
-                  <strong>Intake &gt; Form Builder</strong>, click "New Form",
-                  select your practice area template, and customize fields using
-                  drag and drop...
+                  To connect GitHub, go to{" "}
+                  <strong>Settings &gt; Integrations &gt; GitHub</strong>, click "Connect",
+                  authorize FlowSync, and select your repositories. Tasks will auto-link
+                  when you use #TASK-123 in PRs...
                 </p>
               </div>
             </div>
@@ -133,13 +133,13 @@ export function ProductPreview() {
           <div className="space-y-lg">
             <div>
               <h3 className="headline-md text-tertiary mb-md">
-                Your clients get answers.
+                Your customers get answers.
                 <br />
                 You get time back.
               </h3>
               <p className="body-lg text-muted">
-                LexDesk's AI agent handles routine client inquiries around the
-                clock — so your team can focus on billable work.
+                FlowSync's AI agent handles routine customer inquiries around the
+                clock — so your team can focus on building great products.
               </p>
             </div>
 
@@ -148,11 +148,11 @@ export function ProductPreview() {
               {[
                 {
                   title: "Instant AI Responses",
-                  desc: "Clients get accurate answers in under 30 seconds, any time of day.",
+                  desc: "Customers get accurate answers in under 30 seconds, any time of day.",
                 },
                 {
                   title: "Smart Escalation",
-                  desc: "Billing disputes, legal threats, and angry clients are automatically routed to your team.",
+                  desc: "Billing disputes, data issues, and frustrated customers are automatically routed to your team.",
                 },
                 {
                   title: "Complete Audit Trail",
@@ -160,7 +160,7 @@ export function ProductPreview() {
                 },
                 {
                   title: "Works With Your Workflow",
-                  desc: "Integrates with your existing intake forms, billing, and case management.",
+                  desc: "Integrates with your existing tools: Slack, GitHub, Jira, and Google Drive.",
                 },
               ].map((item) => (
                 <div key={item.title} className="flex items-start gap-sm">

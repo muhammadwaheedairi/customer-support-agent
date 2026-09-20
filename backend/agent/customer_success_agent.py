@@ -15,7 +15,7 @@ def create_customer_success_agent(
 ) -> Agent:
     """Create and configure the Customer Success Agent."""
     agent = Agent(
-        name="LexDesk Customer Success Agent",
+        name="FlowSync Customer Success Agent",
         instructions=get_system_prompt(),
         model=model,
         tools=ALL_TOOLS,
